@@ -1,22 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>SNFs Dataset Explore App - Tutorial</title>
-  <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 2em; color: #222; background: #fafbfd; }
-    code, pre { background: #f4f4f6; padding: 2px 6px; border-radius: 4px; }
-    pre { padding: 10px 16px; border-radius: 6px; border: 1px solid #e5e7eb; overflow-x: auto; }
-    h1, h2, h3 { color: #2b4865; }
-    ul, ol { margin-left: 2em; }
-    .structure { font-family: "Consolas", monospace; background: #f9f9fa; padding: 12px 20px; border-left: 5px solid #3876bf; }
-    .desc-table { border-collapse: collapse; margin-top: 1em;}
-    .desc-table th, .desc-table td { border: 1px solid #ddd; padding: 8px 14px; }
-    .desc-table th { background: #e6eefc; }
-    .highlight { background: #ffe899; padding: 2px 5px; border-radius: 3px;}
-  </style>
-</head>
-<body>
   <h1>SNFs Dataset Explore App</h1>
   <p>A professional Python project for searching, analyzing, and visualizing spent nuclear fuel (SNF) datasets with a Tkinter GUI.</p>
 
