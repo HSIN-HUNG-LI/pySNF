@@ -1,4 +1,8 @@
+# Input file / Results(output)
 snfs_details/
+Results_Multiple/
+Results_Single/
+Results_All_SNFs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
