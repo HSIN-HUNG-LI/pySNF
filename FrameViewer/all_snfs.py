@@ -1,11 +1,14 @@
 import threading
 import time
+import re
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import pandas as pd
 from collections import defaultdict
 from typing import Literal
+from pathlib import Path
 from operator import itemgetter
+
 from base import SNFProcessor
 from FrameViewer.BaseFrame import DataFrameViewer
 from io_file import load_dataset, create_output_dir, write_excel
@@ -17,11 +20,9 @@ class AllSNFsFrame(tk.Frame):
     and display results in scrollable panels.
     """
 
-    def __init__(self, parent, df_path: str, *args, **kwargs):
+    def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.df_path = df_path
-        self.df = load_dataset(df_path)
-        self.n_snfs = len(self.df)
+
         self.save_var = tk.BooleanVar(value=True)
         self._running = False
         self.cols_all = [
@@ -33,7 +34,10 @@ class AllSNFsFrame(tk.Frame):
 
         self._setup_scrollable_canvas()
         self._build_ui()
-        self._log_initial_message()
+        self.multi_text.insert(
+            "1.0",
+            "Read all stdh dataset from [test_files] folder to compute sum of source term and decay heat with nuclide weight and activity",
+        )
 
     def _setup_scrollable_canvas(self):
         """Create a scrollable canvas with an inner frame."""
@@ -64,10 +68,12 @@ class AllSNFsFrame(tk.Frame):
 
         tk.Label(controls, text="SNFs dataset:").pack(side=tk.LEFT)
         entry = tk.Entry(controls, width=40)
-        entry.insert(0, f"~/{self.df_path}")
+        entry.insert(0, f"Use right button to load Excel file")
         entry.config(state="disabled")
         entry.pack(side=tk.LEFT, padx=5)
-
+        tk.Button(controls, text="Load (file)", command=self.load_list).pack(
+            side=tk.LEFT
+        )
         tk.Label(controls, text="Year (2022-2522):").pack(side=tk.LEFT)
         self.year_entry = tk.Entry(controls, width=10)
         self.year_entry.insert(0, "2025")
@@ -130,10 +136,13 @@ class AllSNFsFrame(tk.Frame):
 
     def _log_initial_message(self):
         """Display initial dataset summary in the log with highlighted SNF count."""
+        self.multi_text.delete("1.0", tk.END)
         self.multi_text.tag_configure(
             "highlight", font=("TkDefaultFont", 10, "bold", "underline")
         )
-        self.multi_text.insert("1.0", f"From ~/{self.df_path} read ")
+        self.multi_text.insert(
+            "1.0", f"From ~/{self.df_path} \nRead excel file and Load "
+        )
         self.multi_text.insert(tk.END, str(self.n_snfs), "highlight")
         self.multi_text.insert(
             tk.END,
@@ -203,6 +212,24 @@ class AllSNFsFrame(tk.Frame):
         )
         self.after(1000, self._update_timer)
 
+    def load_list(self):
+        """Load SNF names from a text/CSV file into the selection list."""
+
+        self.df_path = filedialog.askopenfilename(
+            filetypes=[("Text & CSV", "*.txt *.csv")]
+        )
+        if not self.df_path:
+            messagebox.showerror("Error", "No valid Path.")
+            return
+        try:
+            self.df = load_dataset(
+                self.df_path
+            )  # Change for input from button "load file"
+            self.n_snfs = len(self.df)
+            self._log_initial_message()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
     def _run_search_all(self, year):
         """Compute aggregates for STDH, grams, and Ci across all SNFs."""
         stdh_totals = dict.fromkeys(self.cols_all, 0.0)
@@ -230,7 +257,7 @@ class AllSNFsFrame(tk.Frame):
             ):
                 for nuc, val in func().head(20)[["nuclide", col]].values:
                     totals[nuc] += float(pd.to_numeric(val, errors="coerce") or 0)
-                    
+
         # If saving is enabled, write out to Excel
         if self.save_var.get():  #  only save when the checkbox/variable is True
             #  create a timestamped directory under "Results_All_SNFs"
