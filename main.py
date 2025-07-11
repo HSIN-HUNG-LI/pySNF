@@ -36,7 +36,7 @@ class SearchApp(tk.Tk):
             "Introduction": IntroFrame(self),
             "Single SNF": SingleSearchFrame(self, self.df),
             "Multiple SNFs": MultipleSearchFrame(self, self.df),
-            "All SNFs": AllSNFsFrame(self, self.df_path),
+            "All SNFs": AllSNFsFrame(self),
         }
 
         # Display the initial frame
