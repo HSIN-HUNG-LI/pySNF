@@ -6,20 +6,24 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
+
 def get_stdh_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
-    data_file   = project_root / "data" / "snfs_details" / "all_stdh_dataset.csv"
+    data_file = project_root / "data" / "snfs_details" / "all_stdh_dataset.csv"
     return Path(data_file)
+
 
 def get_snfs_dir_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
-    data_file   = project_root / "data" / "snfs_details"
+    data_file = project_root / "data" / "snfs_details"
     return Path(data_file)
+
 
 def get_output_dir_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
-    data_file   = project_root / "output"
+    data_file = project_root / "output"
     return Path(data_file)
+
 
 def load_dataset(path: Union[str, Path]) -> pd.DataFrame:
     """
@@ -64,7 +68,6 @@ def write_excel(
         df_stdh.to_excel(writer, sheet_name="STDH", index=False)
         df_conc.to_excel(writer, sheet_name="Concentration", index=False)
         df_act.to_excel(writer, sheet_name="Activity", index=False)
-
 
 
 def set_SNFdetail_info(option: int = 1) -> list:
