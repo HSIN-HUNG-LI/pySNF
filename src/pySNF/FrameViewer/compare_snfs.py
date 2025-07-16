@@ -9,6 +9,7 @@ from base import SNFProcessor
 from FrameViewer.BaseFrame import DataFrameViewer, build_scrollbar_canvas
 from io_file import create_output_dir, set_SNFdetail_info
 
+
 class CompareSNFsFrame(tk.Frame):
     """
     A scrollable frame for searching SNF data by name and year
@@ -62,7 +63,7 @@ class CompareSNFsFrame(tk.Frame):
         self.year_entry.pack(side=tk.LEFT, padx=5)
 
         row2 = tk.Frame(self.inner)
-        row2.pack(fill=tk.X, padx=10, pady=(0,10))
+        row2.pack(fill=tk.X, padx=10, pady=(0, 10))
         tk.Label(row2, text="Second SNF ID:").pack(side=tk.LEFT)
         self.name_entry2 = tk.Entry(row2, width=20)
         self.name_entry2.insert(0, "1A0137")  # Default name
@@ -201,7 +202,13 @@ class CompareSNFsFrame(tk.Frame):
 
     def _clear_viewers(self):
         # Clear all rows in each viewer's tree
-        for v in (self.STDH_viewer, self.Gram_viewer, self.Ci_viewer, self.Gram_viewer2, self.Ci_viewer2):
+        for v in (
+            self.STDH_viewer,
+            self.Gram_viewer,
+            self.Ci_viewer,
+            self.Gram_viewer2,
+            self.Ci_viewer2,
+        ):
             for iid in v.tree.get_children():
                 v.tree.delete(iid)
 
@@ -266,11 +273,9 @@ class CompareSNFsFrame(tk.Frame):
             ).grid(row=row_idx, column=1, sticky="nsew")
 
             # Vertical separator between SNF blocks
-            tk.Frame(
-                self.details_frame,
-                bg="black",
-                width=4
-            ).grid(row=row_idx, column=2, sticky="ns", padx=(2, 2))
+            tk.Frame(self.details_frame, bg="black", width=4).grid(
+                row=row_idx, column=2, sticky="ns", padx=(2, 2)
+            )
 
             # SNF2 field name label
             tk.Label(
@@ -301,8 +306,6 @@ class CompareSNFsFrame(tk.Frame):
             self.details_frame.grid_columnconfigure(col, weight=1, uniform="col")
         # Keep separator column fixed width
         self.details_frame.grid_columnconfigure(2, weight=0)
-
-
 
     def proc_img_layout(
         self, img_path1: str, img_path2: str, lbl_left: tk.Label, lbl_right: tk.Label
@@ -379,7 +382,7 @@ class CompareSNFsFrame(tk.Frame):
         snf_row1 = matches.iloc[0].to_dict()
 
         # --- Fetch and validate second SNF ---
-        
+
         matches2 = self.df[
             self.df["SNF_id"].astype(str).str.contains(name2, case=False, na=False)
         ]

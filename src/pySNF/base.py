@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from utils import plot_Gram_Ci, Converter_MTU2ASSY
-from io_file import create_output_dir
+from io_file import create_output_dir, get_snfs_dir_path, get_stdh_path
 
 class SNFProcessor:
     """
@@ -22,8 +22,8 @@ class SNFProcessor:
         series_name: str,
         target_year: float,
         method: str = "log10",
-        data_dir: Path = Path.cwd() / "snfs_details",
-        st_dataset_path: Path = Path("snfs_details/all_stdh_dataset.csv"),
+        data_dir: Path = get_snfs_dir_path(),
+        st_dataset_path: Path = get_stdh_path(),
     ):
         self.year = target_year
         self.method = method

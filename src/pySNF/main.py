@@ -4,7 +4,7 @@ from FrameViewer.single_snf import SingleSearchFrame
 from FrameViewer.compare_snfs import CompareSNFsFrame
 from FrameViewer.mutiple_snfs import MultipleSearchFrame
 from FrameViewer.all_snfs import AllSNFsFrame
-from io_file import load_dataset
+from io_file import load_dataset, get_stdh_path
 
 class SearchApp(tk.Tk):
     """Main window for SNFs Dataset Search App."""
@@ -17,7 +17,7 @@ class SearchApp(tk.Tk):
         self.geometry("1200x600")
 
         # Load dataset once to avoid repeated I/O (MessageBox in io file)
-        self.df_path = "snfs_details/all_stdh_dataset.csv"
+        self.df_path = get_stdh_path()
         self.df = load_dataset(self.df_path)
 
         # Define available modes

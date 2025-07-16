@@ -6,8 +6,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
+def get_stdh_path() -> Path:
+    project_root = Path(__file__).resolve().parents[2]
+    data_file   = project_root / "data" / "snfs_details" / "all_stdh_dataset.csv"
+    return Path(data_file)
 
-def load_dataset(path: str) -> pd.DataFrame:
+def get_snfs_dir_path() -> Path:
+    project_root = Path(__file__).resolve().parents[2]
+    data_file   = project_root / "data" / "snfs_details"
+    return Path(data_file)
+
+def get_output_dir_path() -> Path:
+    project_root = Path(__file__).resolve().parents[2]
+    data_file   = project_root / "output"
+    return Path(data_file)
+
+def load_dataset(path: Union[str, Path]) -> pd.DataFrame:
     """
     Load a CSV dataset from the given path. Shows an error dialog if the file
     is missing or cannot be read, and returns an empty DataFrame on failure.
@@ -33,7 +47,7 @@ def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
         Path: Path object pointing to the newly created output directory.
     """
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_path = Path.cwd() / parent_folder_name / f"{timestamp}_output"
+    output_path = get_output_dir_path() / parent_folder_name / f"{timestamp}_output"
     output_path.mkdir(parents=True, exist_ok=True)
 
     return output_path
@@ -50,6 +64,7 @@ def write_excel(
         df_stdh.to_excel(writer, sheet_name="STDH", index=False)
         df_conc.to_excel(writer, sheet_name="Concentration", index=False)
         df_act.to_excel(writer, sheet_name="Activity", index=False)
+
 
 
 def set_SNFdetail_info(option: int = 1) -> list:
