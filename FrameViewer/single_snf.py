@@ -6,8 +6,8 @@ from PIL import Image, ImageTk
 from typing import Literal
 
 from base import SNFProcessor
-from FrameViewer.BaseFrame import DataFrameViewer
-from io_file import create_output_dir
+from FrameViewer.BaseFrame import DataFrameViewer, build_scrollbar_canvas
+from io_file import create_output_dir, set_SNFdetail_info
 
 
 class SingleSearchFrame(tk.Frame):
@@ -54,7 +54,7 @@ class SingleSearchFrame(tk.Frame):
         row.pack(fill=tk.X, padx=10, pady=10)
         tk.Label(row, text="SNF Name:").pack(side=tk.LEFT)
         self.name_entry = tk.Entry(row, width=20)
-        self.name_entry.insert(0, "C1A001")  # Default name
+        self.name_entry.insert(0, "1C2505")  # Default name
         self.name_entry.pack(side=tk.LEFT, padx=5)
         tk.Label(row, text="Year (2022-2522):").pack(side=tk.LEFT)
         self.year_entry = tk.Entry(row, width=10)
@@ -64,6 +64,14 @@ class SingleSearchFrame(tk.Frame):
         tk.Checkbutton(row, text="Save output", variable=self.save_var).pack(
             side=tk.LEFT, padx=(5, 0)
         )  # Save output checkbox
+        # --- Details Viewer (above STDH_viewer) ---
+        _, self.details_canvas, self.details_frame = build_scrollbar_canvas(
+            self.inner, label="SNF Details"
+        )
+
+        # Set default empty values
+        self.default_fields = set_SNFdetail_info(option=1)
+        # self._update_details_grid({key: "--" for key in self.default_fields})
 
         # --- STDH Viewer: full width, fixed 150px height ---
         self.STDH_viewer = self._make_viewer(
@@ -155,6 +163,66 @@ class SingleSearchFrame(tk.Frame):
         for vals in df.itertuples(index=False, name=None):
             viewer.tree.insert("", "end", values=vals)
 
+    def _update_details_grid(self, data: dict):
+        # Local import for font support
+        import tkinter.font as tkfont
+
+        # Define font size and padding for table cells
+        cell_font = tkfont.Font(size=10)
+        pad_x = 4
+        pad_y = 4
+
+        # Clear existing widgets
+        for widget in self.details_frame.winfo_children():
+            widget.destroy()
+
+        # Three items per row
+        n_per_row = 4
+
+        # Configure grid columns to expand equally with uniform width
+        total_cols = n_per_row * 2
+        for col_idx in range(total_cols):
+            self.details_frame.grid_columnconfigure(col_idx, weight=1, uniform="col")
+
+        # Prepare display values, defaulting to "--"
+        values = [data.get(key, "--") for key in self.default_fields]
+
+        # Populate table with bordered cells, larger font, and extra spacing
+        for idx, (key, val) in enumerate(zip(self.default_fields, values)):
+            row = idx // n_per_row
+            col = (idx % n_per_row) * 2
+
+            # Format numeric values in scientific notation with two decimals
+            try:
+                num = float(val)
+                text_val = f"{num:.2e}"
+            except (TypeError, ValueError):
+                text_val = str(val)
+
+            # Field name cell
+            tk.Label(
+                self.details_frame,
+                text=f"{key}:",
+                font=cell_font,
+                anchor="e",
+                borderwidth=1,
+                relief="solid",
+                padx=pad_x,
+                pady=pad_y,
+            ).grid(row=row, column=col, sticky="nsew")
+
+            # Field value cell
+            tk.Label(
+                self.details_frame,
+                text=text_val,
+                font=cell_font,
+                anchor="w",
+                borderwidth=1,
+                relief="solid",
+                padx=pad_x,
+                pady=pad_y,
+            ).grid(row=row, column=col + 1, sticky="nsew")
+
     def search_single(self):
         # --- Input validation ---
         name = self.name_entry.get().strip()
@@ -168,9 +236,9 @@ class SingleSearchFrame(tk.Frame):
             return messagebox.showerror("Error", "Enter a SNF name.\n")
         if not yr:
             return messagebox.showerror("Error", "Enter a year.\n")
-        if "Name" not in self.df.columns:
+        if "SNF_id" not in self.df.columns:
             return messagebox.showerror(
-                "Error", " 'Name' column missing in CSV Dataframe .\n"
+                "Error", " 'SNF_id' column missing in CSV Dataframe .\n"
             )
         try:
             y = int(yr)
@@ -182,10 +250,14 @@ class SingleSearchFrame(tk.Frame):
 
         # --- Data lookup ---
         matches = self.df[
-            self.df["Name"].astype(str).str.contains(name, case=False, na=False)
+            self.df["SNF_id"].astype(str).str.contains(name, case=False, na=False)
         ]
         if matches.empty:
             return messagebox.showerror("Error", f" No matches for '{name}' in {yr}.\n")
+
+        # --- Insert SNF metadata details into details_viewer ---
+        snf_row = matches.iloc[0].to_dict()
+        self._update_details_grid(snf_row)
 
         # --- Computation with SNFProcessor ---
         proc = SNFProcessor(series_name=name, target_year=y)
