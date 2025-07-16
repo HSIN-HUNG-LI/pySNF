@@ -1,9 +1,5 @@
 # Input file / Results(output)
-snfs_details/
-Results_Multiple/
-Results_Single/
-Results_All_SNFs/
-Results_Compare_SNFs/
+output/
 data/
 
 # Byte-compiled / optimized / DLL files
