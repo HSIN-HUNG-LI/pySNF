@@ -25,7 +25,7 @@ class MultipleSearchFrame(tk.Frame):
 
         # --- Column definitions shared across methods ---
         self.cols = [
-            "Name",
+            "SNF_id",
             "DH(Watts/assy.)",
             "FN(n/s/assy.)",
             "FG(r/s/assy.)",
@@ -36,10 +36,10 @@ class MultipleSearchFrame(tk.Frame):
         input_frame = tk.Frame(self)
         input_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        # --- Name entry and action buttons ---
-        tk.Label(input_frame, text="SNFs Names:").pack(side=tk.LEFT)
+        # --- SNF_id entry and action buttons ---
+        tk.Label(input_frame, text="SNFs id:").pack(side=tk.LEFT)
         self.name_entry = tk.Entry(input_frame, width=20)
-        self.name_entry.insert(0, "C1A001")  # Default SNF name
+        self.name_entry.insert(0, "1C2505")  # Default SNF name
         self.name_entry.pack(side=tk.LEFT, padx=5)
 
         tk.Button(input_frame, text="Add", command=self.add_multiple).pack(side=tk.LEFT)
@@ -114,7 +114,7 @@ class MultipleSearchFrame(tk.Frame):
         entries = [n.strip() for n in self.name_entry.get().split(",") if n.strip()]
         for name in entries:
             matches = self.df[
-                self.df["Name"].astype(str).str.contains(name, case=False, na=False)
+                self.df["SNF_id"].astype(str).str.contains(name, case=False, na=False)
             ]
             if matches.empty:
                 self._show_error(f" No matches for '{name}'.\n")
@@ -153,7 +153,7 @@ class MultipleSearchFrame(tk.Frame):
                 self._show_error("No valid names found.")
                 return
             # Determine which names are not present in the dataset
-            valid_names = set(self.df["Name"].astype(str))
+            valid_names = set(self.df["SNF_id"].astype(str))
             invalid = [n for n in names if n not in valid_names]
             if invalid:
                 # Alert the user about each invalid name and abort loading
@@ -181,12 +181,12 @@ class MultipleSearchFrame(tk.Frame):
             return self._show_error("Dataset is not loaded or is empty.")
         if not self.selected_names:
             return self._show_error("No SNF names selected.")
-        if "Name" not in self.df.columns:
-            return self._show_error("Dataset missing 'Name' column.")
+        if "SNF_id" not in self.df.columns:
+            return self._show_error("Dataset missing 'SNF_id' column.")
 
         # Prepare accumulators
         rows = []
-        grand_totals = {col: 0.0 for col in self.cols if col != "Name"}
+        grand_totals = {col: 0.0 for col in self.cols if col != "SNF_id"}
         name_summaries = []
 
         # Loop over each SNF series
@@ -213,7 +213,7 @@ class MultipleSearchFrame(tk.Frame):
 
             # Format each row of df_stdh and prepend the series name
             disp = df_stdh.round(2).map(lambda x: f"{x:.2e}")
-            disp.insert(0, "Name", name)
+            disp.insert(0, "SNF_id", name)
             rows.extend(disp.itertuples(index=False, name=None))
 
         # If we have any data, append summary rows
