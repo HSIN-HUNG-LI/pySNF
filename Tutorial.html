@@ -37,25 +37,25 @@
   <pre>cd C:\path\to\your\project</pre>
 
   <h3>1.3 Create a Virtual Environment</h3>
-  <pre>py -m venv SNFs_project</pre>
-  <p>This creates an isolated environment in <code>SNFs_project</code>.</p>
+  <pre>py -m venv pySNF_project</pre>
+  <p>This creates an isolated environment in <code>pySNF_project</code>.</p>
 
   <h3>1.4 Activate the Virtual Environment</h3>
   <ul>
     <li><b>PowerShell:</b>
-      <pre>.\SNFs_project\Scripts\Activate.ps1</pre>
+      <pre>.\pySNF_project\Scripts\Activate.ps1</pre>
     </li>
     <li><b>Command Prompt:</b>
-      <pre>.\SNFs_project\Scripts\activate.bat</pre>
+      <pre>.\pySNF_project\Scripts\activate.bat</pre>
     </li>
   </ul>
-  <p>Your prompt will show <code>(SNFs_project)</code> to confirm activation.</p>
+  <p>Your prompt will show <code>(pySNF_project)</code> to confirm activation.</p>
 
   <h3>1.5 Install Dependencies</h3>
   <pre>pip install -r requirements.txt</pre>
   <p>Installs all required libraries as specified by your project.</p>
 
-  <h3>1.6 Run the Application</h3>
+  <h3>1.6 Run the Application (cd .\src\pySNF)</h3>
   <pre>py main.py</pre>
   <p>This command starts the SNFs Tkinter GUI app.</p>
 
@@ -76,22 +76,32 @@
   </ul>
 
   <h2>2. Project File Structure</h2>
-  <div class="structure">
-    Project_root/<br>
-    ├── main.py                  # Entry point of the app<br>
-    ├── base.py                  # Shared SNFs processor classes<br>
-    ├── utils.py                 # Utility functions (plotting, conversion, etc.)<br>
-    ├── io_file.py               # File I/O: load/save datasets<br>
-    ├── FrameViewer/             # UI modules for Tkinter<br>
-    │   ├── BaseFrame.py         # Abstract DataFrame viewer<br>
-    │   ├── intro_snf.py         # Introduction page<br>
-    │   ├── single_snf.py        # Single name/year search<br>
-    │   ├── mutiple_snfs.py      # Multi-name search interface<br>
-    │   └── all_snfs.py          # All SNFs search interface<br>
-    ├── snfs_details/            # Data directory for SNF files (*.csv)<br>
-    ├── output/                  # Exported result files (*.csv, *.png)<br>
-    └── README.md                # Hands-on Tutorial<br>
-  </div>
+  <pre class="structure">
+    pySNF/<br>
+    ├── README.md                # High‑level project overview, installation steps, and usage examples<br>  
+    ├── LICENSE                  # Open‑source license terms (Apache 2.0)<br>  
+    ├── requirements.txt         # Pin‑version Python dependencies for pip installation<br>  
+    ├── .gitignore               # Patterns for files/directories to exclude from Git<br>  
+    ├── src/                     # source code<br>
+    │   ├── Notebook             # Dataset converter or developing project<br>
+    │   └── pySNF/               # module name<br>
+    │       ├── __init__.py      <br>
+    │       ├── main.py          # Entry point of the app<br>
+    │       ├── io.py            # File I/O: load/save datasets<br>
+    │       ├── base.py          # Shared SNFs processor classes<br>
+    │       ├── utils.py         # Utility functions (plotting, conversion, etc.)<br>
+    │       └── FrameViewer/            # UI modules for Tkinter<br>
+    │           ├── __init__.py         <br>
+    │           ├── BaseFrame.py         # Abstract DataFrame viewer<br>
+    │           ├── intro_snf.py         # Introduction page<br>
+    │           ├── single_snf.py        # Single name/year search<br>
+    │           ├── mutiple_snfs.py      # Multi-name search interface<br>
+    │           ├── all_snfs.py          # All SNFs search interface<br>
+    │           └── compare_snfs.py      # Compare SNFs interface<br>
+    ├── data/                    # Data directory for SNF files (*.csv)<br>
+    └── output/                  # Exported result files (*.csv, *.png)<br>
+
+  </pre>
 
   <h3>Directory & File Description</h3>
   <table class="desc-table">
@@ -109,10 +119,10 @@
   <h2>3. Common Command Reference</h2>
   <pre>
 cd C:\path\to\your\project
-py -m venv SNFs_project
-.\SNFs_project\Scripts\Activate.ps1
+py -m venv pySNF_project
+.\pySNF_project\Scripts\Activate.ps1
 pip install -r requirements.txt
-py main.py
+py main.py (cd .\src\pySNF)
   </pre>
 
   <h2>4. Best Practices</h2>
