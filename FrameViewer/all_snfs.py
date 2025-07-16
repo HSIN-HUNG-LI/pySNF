@@ -1,12 +1,10 @@
 import threading
 import time
-import re
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import pandas as pd
 from collections import defaultdict
 from typing import Literal
-from pathlib import Path
 from operator import itemgetter
 
 from base import SNFProcessor
@@ -236,7 +234,7 @@ class AllSNFsFrame(tk.Frame):
         gram_totals = defaultdict(float)
         ci_totals = defaultdict(float)
 
-        for name in self.df["Name"]:
+        for name in self.df["SNF_id"]:
             if not self._running:
                 break
             proc = SNFProcessor(series_name=name, target_year=year)
