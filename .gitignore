@@ -4,6 +4,7 @@ Results_Multiple/
 Results_Single/
 Results_All_SNFs/
 Results_Compare_SNFs/
+data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
