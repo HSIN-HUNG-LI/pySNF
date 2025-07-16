@@ -40,7 +40,7 @@ def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
 
 
 def write_excel(
-    df_stdh, df_act, df_conc, output_dir: Union[str, Path], file_name:str
+    df_stdh, df_act, df_conc, output_dir: Union[str, Path], file_name: str
 ) -> None:
     """Writes all three sheets to a single workbook, overwriting if exists."""
     path = Path(output_dir, f"{file_name}.xlsx")
@@ -50,3 +50,38 @@ def write_excel(
         df_stdh.to_excel(writer, sheet_name="STDH", index=False)
         df_conc.to_excel(writer, sheet_name="Concentration", index=False)
         df_act.to_excel(writer, sheet_name="Activity", index=False)
+
+
+def set_SNFdetail_info(option: int = 1) -> list:
+    if option == 1:
+        return [
+            "SNF_id",
+            "Type",
+            "MTU",
+            "Length",
+            "Down",
+            "Cycles",
+            "Enrich",
+            "SP",
+            "Burnup",
+            "Cool",
+            "SP1",
+            "SP2",
+            "SP3",
+            "SP4",
+            "SP5",
+            "SP6",
+            "UP1",
+            "UP2",
+            "UP3",
+            "UP4",
+            "UP5",
+            "UP6",
+            "Down1",
+            "Down2",
+            "Down3",
+            "Down4",
+            "Down5",
+        ]
+    else:
+        return []
