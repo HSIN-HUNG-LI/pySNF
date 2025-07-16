@@ -7,7 +7,6 @@ import pandas as pd
 from utils import plot_Gram_Ci, Converter_MTU2ASSY
 from io_file import create_output_dir
 
-
 class SNFProcessor:
     """
     Encapsulates all logic for:
@@ -26,20 +25,21 @@ class SNFProcessor:
         data_dir: Path = Path.cwd() / "snfs_details",
         st_dataset_path: Path = Path("snfs_details/all_stdh_dataset.csv"),
     ):
-        self.series_name = series_name
         self.year = target_year
         self.method = method
 
         # Load source-term dataset// data_dir: Path = Path.cwd() / "snfs_details"/ "all_snfs_details.parquet",
         self.df_STDH_all = pd.read_csv(st_dataset_path, index_col=False)
+        self.SNF_id = series_name
+        self.series_name = self.get_name_by_snf_id(self.df_STDH_all, series_name)
         self.df_STDH_filtered = self.df_STDH_all[
-            self.df_STDH_all["Name"] == series_name
+            self.df_STDH_all["Name"] == self.series_name
         ]
         self.data_conc = pd.read_csv(
-            data_dir / f"{series_name}_gpMTU.csv", encoding="utf-8-sig", index_col=0
+            data_dir / f"{self.series_name}_gpMTU.csv", encoding="utf-8-sig", index_col=0
         )
         self.data_Ci = pd.read_csv(
-            data_dir / f"{series_name}_CipMTU.csv", encoding="utf-8-sig", index_col=0
+            data_dir / f"{self.series_name}_CipMTU.csv", encoding="utf-8-sig", index_col=0
         )
 
         # Determine decay bounds bracket
@@ -54,6 +54,16 @@ class SNFProcessor:
             if lower <= span <= upper:
                 return lower, upper
         return years[-2], years[-1]  # fallback to 200–500
+    
+    @staticmethod
+    def get_name_by_snf_id(df: pd.DataFrame, snf_id: str) -> str:
+        """
+        Return the Name corresponding to the given SNF_id.
+        If SNF_id is not found, returns None.
+        """
+        # Filter rows where SNF_id matches, then take the first Name
+        match = df.loc[df['SNF_id'] == snf_id, 'Name']
+        return match.iat[0] if not match.empty else "None"
 
     @staticmethod
     def interpolate(
@@ -155,7 +165,7 @@ class SNFProcessor:
     def plot_single_SNF(self, output_dir: Union[str, Path]) -> None:
         plot_Gram_Ci(
             self.data_conc,
-            self.series_name,
+            self.SNF_id,
             f"Weight",
             "Weight (g/assy.)",
             self.df_STDH_filtered,
@@ -163,7 +173,7 @@ class SNFProcessor:
         )
         plot_Gram_Ci(
             self.data_Ci,
-            self.series_name,
+            self.SNF_id,
             f"Activity",
             "Activity (Ci/assy.)",
             self.df_STDH_filtered,
