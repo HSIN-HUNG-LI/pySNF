@@ -7,7 +7,7 @@ from typing import Literal
 
 from base import SNFProcessor
 from FrameViewer.BaseFrame import DataFrameViewer, build_scrollbar_canvas
-from io_file import create_output_dir, set_SNFdetail_info
+from io_file import create_output_dir, set_SNFdetail_info, get_SNFdetail_TableUnit
 
 
 class CompareSNFsFrame(tk.Frame):
@@ -229,9 +229,13 @@ class CompareSNFsFrame(tk.Frame):
         # Clear any existing widgets in the frame
         for widget in self.details_frame.winfo_children():
             widget.destroy()
+        table_SNF_detail = get_SNFdetail_TableUnit()
 
         # Iterate over each field and layout SNF1 and SNF2 side by side
-        for row_idx, key in enumerate(self.default_fields):
+        # for row_idx, key in enumerate(self.default_fields):
+        for row_idx, (key, key_unit) in enumerate(
+            zip(self.default_fields, table_SNF_detail)
+        ):
             # Format SNF1 value in scientific notation if numeric
             val1_raw = data1.get(key, "--")
             try:
@@ -251,7 +255,7 @@ class CompareSNFsFrame(tk.Frame):
             # SNF1 field name label
             tk.Label(
                 self.details_frame,
-                text=f"{key}:",
+                text=f"{key_unit}:",
                 font=cell_font,
                 anchor="e",
                 borderwidth=1,
@@ -280,7 +284,7 @@ class CompareSNFsFrame(tk.Frame):
             # SNF2 field name label
             tk.Label(
                 self.details_frame,
-                text=f"{key}:",
+                text=f"{key_unit}:",
                 font=cell_font,
                 anchor="e",
                 borderwidth=1,

@@ -103,3 +103,38 @@ def set_SNFdetail_info(option: int = 1) -> list:
         ]
     else:
         return []
+
+
+def get_SNFdetail_TableUnit(option: int = 1) -> list:
+    if option == 1:
+        return [
+            "SNF_id",
+            "Type",
+            "MTU",
+            "Length(cm)",
+            "Down(Days)",
+            "Cycles",
+            "Enrich(%U235)",
+            "SP(MW)",
+            "Burnup(MWD/MTU)",
+            "Cool(Years)",
+            "SP1(MW)",
+            "SP2(MW)",
+            "SP3(MW)",
+            "SP4(MW)",
+            "SP5(MW)",
+            "SP6(MW)",
+            "UP1(Days)",
+            "UP2(Days)",
+            "UP3(Days)",
+            "UP4(Days)",
+            "UP5(Days)",
+            "UP6(Days)",
+            "Down1(Days)",
+            "Down2(Days)",
+            "Down3(Days)",
+            "Down4(Days)",
+            "Down5(Days)",
+        ]
+    else:
+        return []

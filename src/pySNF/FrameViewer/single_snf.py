@@ -7,7 +7,7 @@ from typing import Literal
 
 from base import SNFProcessor
 from FrameViewer.BaseFrame import DataFrameViewer, build_scrollbar_canvas
-from io_file import create_output_dir, set_SNFdetail_info
+from io_file import create_output_dir, set_SNFdetail_info, get_SNFdetail_TableUnit
 
 
 class SingleSearchFrame(tk.Frame):
@@ -71,7 +71,6 @@ class SingleSearchFrame(tk.Frame):
 
         # Set default empty values
         self.default_fields = set_SNFdetail_info(option=1)
-        # self._update_details_grid({key: "--" for key in self.default_fields})
 
         # --- STDH Viewer: full width, fixed 150px height ---
         self.STDH_viewer = self._make_viewer(
@@ -186,9 +185,10 @@ class SingleSearchFrame(tk.Frame):
 
         # Prepare display values, defaulting to "--"
         values = [data.get(key, "--") for key in self.default_fields]
+        table_SNF_detail = get_SNFdetail_TableUnit()
 
         # Populate table with bordered cells, larger font, and extra spacing
-        for idx, (key, val) in enumerate(zip(self.default_fields, values)):
+        for idx, (key, val) in enumerate(zip(table_SNF_detail, values)):
             row = idx // n_per_row
             col = (idx % n_per_row) * 2
 
