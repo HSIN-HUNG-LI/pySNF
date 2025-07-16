@@ -1,6 +1,7 @@
 import tkinter as tk
 from FrameViewer.intro_snf import IntroFrame
 from FrameViewer.single_snf import SingleSearchFrame
+from FrameViewer.compare_snfs import CompareSNFsFrame
 from FrameViewer.mutiple_snfs import MultipleSearchFrame
 from FrameViewer.all_snfs import AllSNFsFrame
 from io_file import load_dataset
@@ -20,8 +21,8 @@ class SearchApp(tk.Tk):
         self.df = load_dataset(self.df_path)
 
         # Define available modes
-        modes = ["Introduction", "Single SNF", "Multiple SNFs", "All SNFs"]
-        self.mode_var = tk.StringVar(value=modes[3])
+        modes = ["Introduction", "Single SNF", "Compare SNFs", "Multiple SNFs", "All SNFs"]
+        self.mode_var = tk.StringVar(value=modes[2])
 
         # Mode selection dropdown
         tk.OptionMenu(
@@ -35,6 +36,7 @@ class SearchApp(tk.Tk):
         self.frames = {
             "Introduction": IntroFrame(self),
             "Single SNF": SingleSearchFrame(self, self.df),
+            "Compare SNFs": CompareSNFsFrame(self, self.df),
             "Multiple SNFs": MultipleSearchFrame(self, self.df),
             "All SNFs": AllSNFsFrame(self),
         }
