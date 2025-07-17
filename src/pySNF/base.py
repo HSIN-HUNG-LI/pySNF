@@ -7,6 +7,7 @@ import pandas as pd
 from utils import plot_Gram_Ci, Converter_MTU2ASSY
 from io_file import create_output_dir, get_snfs_dir_path, get_stdh_path
 
+
 class SNFProcessor:
     """
     Encapsulates all logic for:
@@ -36,10 +37,14 @@ class SNFProcessor:
             self.df_STDH_all["Name"] == self.series_name
         ]
         self.data_conc = pd.read_csv(
-            data_dir / f"{self.series_name}_gpMTU.csv", encoding="utf-8-sig", index_col=0
+            data_dir / f"{self.series_name}_gpMTU.csv",
+            encoding="utf-8-sig",
+            index_col=0,
         )
         self.data_Ci = pd.read_csv(
-            data_dir / f"{self.series_name}_CipMTU.csv", encoding="utf-8-sig", index_col=0
+            data_dir / f"{self.series_name}_CipMTU.csv",
+            encoding="utf-8-sig",
+            index_col=0,
         )
 
         # Determine decay bounds bracket
@@ -54,7 +59,7 @@ class SNFProcessor:
             if lower <= span <= upper:
                 return lower, upper
         return years[-2], years[-1]  # fallback to 200–500
-    
+
     @staticmethod
     def get_name_by_snf_id(df: pd.DataFrame, snf_id: str) -> str:
         """
@@ -62,7 +67,7 @@ class SNFProcessor:
         If SNF_id is not found, returns None.
         """
         # Filter rows where SNF_id matches, then take the first Name
-        match = df.loc[df['SNF_id'] == snf_id, 'Name']
+        match = df.loc[df["SNF_id"] == snf_id, "Name"]
         return match.iat[0] if not match.empty else "None"
 
     @staticmethod
@@ -149,9 +154,10 @@ class SNFProcessor:
         df["Ci/MTU"] = df["Ci/MTU"].map(lambda x: f"{x:.2e}")
         df["Ci/assy."] = df["Ci/assy."].map(lambda x: f"{x:.2e}")
         return df
+
     @staticmethod
     def write_excel(
-        df_stdh, df_act, df_conc, output_dir: Union[str, Path], file_name:str
+        df_stdh, df_act, df_conc, output_dir: Union[str, Path], file_name: str
     ) -> None:
         """Writes all three sheets to a single workbook, overwriting if exists."""
         path = Path(output_dir, f"{file_name}.xlsx")
@@ -212,4 +218,3 @@ class SNFProcessor:
             self.df_STDH_filtered,
             output_dir,
         )
-
