@@ -4,10 +4,10 @@ import pandas as pd
 from typing import Tuple
 import tkinter.font as tkfont
 
-
 import tkinter as tk
 from tkinter import ttk
 import pandas as pd
+
 
 class DataFrameViewer(tk.Frame):
     def __init__(self, parent, df: pd.DataFrame, title: str, *args, **kwargs):
@@ -54,8 +54,6 @@ class DataFrameViewer(tk.Frame):
         for row in df.to_numpy().tolist():
             self.tree.insert("", "end", values=row)
 
-
-
     def load_dataframe(self, df: pd.DataFrame):
         """
         Load and display a new DataFrame, replacing existing content.
@@ -100,7 +98,10 @@ class DataFrameViewer(tk.Frame):
         for col in cols:
             self.tree.column(col, width=col_width, stretch=True)
 
-def build_scrollbar_canvas(parent: tk.Widget, label: str = "", height: int = 120) -> Tuple[tk.LabelFrame, tk.Canvas, tk.Frame]:
+
+def build_scrollbar_canvas(
+    parent: tk.Widget, label: str = "", height: int = 120
+) -> Tuple[tk.LabelFrame, tk.Canvas, tk.Frame]:
     """
     Create a scrollable canvas with a centered, enlarged title and vertical scrollbar.
     Returns: (label_frame, canvas, inner_frame)
@@ -109,12 +110,7 @@ def build_scrollbar_canvas(parent: tk.Widget, label: str = "", height: int = 120
     label_font = tkfont.Font(size=12, weight="bold")
     # LabelFrame container with title centered at the top
     label_frame = tk.LabelFrame(
-        parent,
-        text=label,
-        font=label_font,
-        labelanchor="n",
-        bd=2,
-        relief="groove"
+        parent, text=label, font=label_font, labelanchor="n", bd=2, relief="groove"
     )
     label_frame.pack(fill=tk.BOTH, padx=15, pady=5, expand=True)
 
