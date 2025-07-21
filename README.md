@@ -8,7 +8,7 @@
   <ol>
     <li>Download the installer from <a href="https://www.python.org/downloads/" target="_blank">python.org/downloads/</a>.</li>
     <li>Run the installer. <span class="highlight">Ensure you select "Add Python to PATH"</span> before installation.</li>
-    <li>Open <b>Command Prompt</b> and check your Python version:
+    <li>Open <b>PowerShell or Command Prompt</b> and check your Python version:
       <pre>python --version</pre>
       or
       <pre>py --version</pre>
@@ -22,7 +22,14 @@
   <pre>py -m venv pySNF_project</pre>
   <p>This creates an isolated environment in <code>pySNF_project</code>.</p>
 
-  <h3>1.4 Activate the Virtual Environment</h3>
+  <h3>1.4.1 Change the script execution policy in Windows PowerShell</h3>
+  <p> Allow running local PowerShell scripts (like <code>Activate.ps1</code> from a Python virtual environment)</p>
+  <ul>
+    <li><b>PowerShell:</b>
+      <pre>Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned</pre>
+    </li>
+  </ul>
+  <h3>1.4.2 Activate the Virtual Environment</h3>
   <ul>
     <li><b>PowerShell:</b>
       <pre>.\pySNF_project\Scripts\Activate.ps1</pre>
@@ -115,4 +122,3 @@ py main.py (cd .\src\pySNF)
     <li>Consult this documentation for setup or troubleshooting.</li>
   </ul>
 </body>
-
