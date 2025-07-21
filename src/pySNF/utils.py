@@ -4,7 +4,7 @@ import os
 import glob
 import pandas as pd
 from pathlib import Path
-from typing import Union
+from typing import Union, cast
 
 
 class SNFParquetConverter:
@@ -76,7 +76,8 @@ class SNFParquetConverter:
         :return: pandas DataFrame subset.
         """
         df = pd.read_parquet(parquet_file)
-        return df[df["source_file"] == source_filename]
+        filtered_df = cast(pd.DataFrame, df.loc[df["source_file"] == source_filename])
+        return filtered_df
 
 
 def restricted_year(x: str) -> float:
