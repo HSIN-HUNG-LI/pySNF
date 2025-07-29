@@ -4,6 +4,7 @@ from FrameViewer.single_snf import SingleSearchFrame
 from FrameViewer.compare_snfs import CompareSNFsFrame
 from FrameViewer.mutiple_snfs import MultipleSearchFrame
 from FrameViewer.all_snfs import AllSNFsFrame
+from FrameViewer.prediction import PredictionFrame
 from io_file import load_dataset, get_stdh_path
 
 class SearchApp(tk.Tk):
@@ -39,6 +40,7 @@ class SearchApp(tk.Tk):
             "Compare SNFs": CompareSNFsFrame(self, self.df),
             "Multiple SNFs": MultipleSearchFrame(self, self.df),
             "All SNFs": AllSNFsFrame(self),
+            "Prediction": PredictionFrame(self),
         }
 
         # Display the initial frame
