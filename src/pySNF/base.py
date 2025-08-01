@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import Union
+from typing import Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 
@@ -218,3 +218,148 @@ class SNFProcessor:
             self.df_STDH_filtered,
             output_dir,
         )
+
+
+class PredictSNFs_interpolate:
+    """
+    Perform 4D interpolation over grid data for given fuel parameters.
+    """
+
+    def __init__(
+        self,
+        grid_df: pd.DataFrame,
+        enrichment: float,
+        burnup: float,
+        specific_power: float,
+        cooling_time: float,
+        enrichment_space: np.ndarray,
+        specific_power_space: np.ndarray,
+        burnup_space: np.ndarray,
+        cooling_time_space: np.ndarray,
+        output_cols: Sequence[str],
+    ) -> None:
+        # Copy and rename incoming columns for consistency
+        # Assumes the first four columns correspond to the 4 axes
+        self.grid = grid_df.copy()
+        self.grid.columns = ["Enrich", "SP", "Burnup", "Cool"] + list(output_cols)
+
+        # Build a MultiIndex for fast point lookups
+        self.grid.set_index(["Enrich", "SP", "Burnup", "Cool"], inplace=True)
+
+        # Store target parameters
+        self.enrichment = enrichment
+        self.burnup = burnup
+        self.specific_power = specific_power
+        self.cooling_time = cooling_time
+
+        # Store the available grid axes
+        self.enrichment_space = enrichment_space
+        self.specific_power_space = specific_power_space
+        self.burnup_space = burnup_space
+        self.cooling_time_space = cooling_time_space
+
+        # Keep output column names in a list
+        self.output_cols = list(output_cols)
+
+    @staticmethod
+    def _linear_interpolate(
+        x0: float, x1: float, y0: np.ndarray, y1: np.ndarray, x: float
+    ) -> np.ndarray:
+        """
+        Linearly interpolate between y0 @ x0 and y1 @ x1 for target x.
+        """
+        t = (x - x0) / (x1 - x0)
+        return y0 + t * (y1 - y0)
+
+    @staticmethod
+    def _find_bounds(value: float, grid: np.ndarray) -> Tuple[float, float]:
+        """
+        Locate the two nearest grid points around `value`.
+        """
+        if value <= grid[0]:
+            return grid[0], grid[1]
+        if value >= grid[-1]:
+            return grid[-2], grid[-1]
+        idx = np.searchsorted(grid, value) - 1
+        return grid[idx], grid[idx + 1]
+
+    def _get_reduced_grid(self) -> np.ndarray:
+        """
+        Extract the 16 corner points around our target parameters
+        and return an array of shape (2,2,2,2,n_outputs).
+        """
+        # Find lower & upper bounds for each axis once
+        e0, e1 = self._find_bounds(self.enrichment, self.enrichment_space)
+        sp0, sp1 = self._find_bounds(self.specific_power, self.specific_power_space)
+        b0, b1 = self._find_bounds(self.burnup, self.burnup_space)
+        c0, c1 = self._find_bounds(self.cooling_time, self.cooling_time_space)
+
+        # Pre‐allocate the 5D result array
+        n_out = len(self.output_cols)
+        grid_vals = np.empty((2, 2, 2, 2, n_out), dtype=float)
+
+        # Fill the array by direct MultiIndex lookup
+        for i, e in enumerate((e0, e1)):
+            for j, sp in enumerate((sp0, sp1)):
+                for k, b in enumerate((b0, b1)):
+                    for m, c in enumerate((c0, c1)):
+                        try:
+                            row = self.grid.loc[(e, sp, b, c), self.output_cols]
+                            grid_vals[i, j, k, m] = row.values
+                        except KeyError:
+                            # If missing, fill with NaN
+                            grid_vals[i, j, k, m] = np.nan
+
+        return grid_vals
+
+    def interpolate(self) -> pd.Series:
+        """
+        Perform the 4-step hierarchical interpolation:
+        1) along Cool, 2) then Burnup, 3) then SP, 4) then Enrich.
+        Returns the final interpolated outputs as a pandas Series.
+        """
+        # Extract the 16 corner values
+        corner = self._get_reduced_grid()
+
+        # Precompute all axis bounds
+        e0, e1 = self._find_bounds(self.enrichment, self.enrichment_space)
+        sp0, sp1 = self._find_bounds(self.specific_power, self.specific_power_space)
+        b0, b1 = self._find_bounds(self.burnup, self.burnup_space)
+        c0, c1 = self._find_bounds(self.cooling_time, self.cooling_time_space)
+
+        n_out = len(self.output_cols)
+
+        # 1) Interpolate along the Cool axis → shape (2,2,2,n_out)
+        interp_c = np.empty((2, 2, 2, n_out), dtype=float)
+        for i in range(2):
+            for j in range(2):
+                for k in range(2):
+                    y0 = corner[i, j, k, 0]
+                    y1 = corner[i, j, k, 1]
+                    interp_c[i, j, k] = self._linear_interpolate(
+                        c0, c1, y0, y1, self.cooling_time
+                    )
+
+        # 2) Interpolate along the Burnup axis → shape (2,2,n_out)
+        interp_b = np.empty((2, 2, n_out), dtype=float)
+        for i in range(2):
+            for j in range(2):
+                y0 = interp_c[i, j, 0]
+                y1 = interp_c[i, j, 1]
+                interp_b[i, j] = self._linear_interpolate(b0, b1, y0, y1, self.burnup)
+
+        # 3) Interpolate along the Specific Power axis → shape (2,n_out)
+        interp_sp = np.empty((2, n_out), dtype=float)
+        for i in range(2):
+            y0 = interp_b[i, 0]
+            y1 = interp_b[i, 1]
+            interp_sp[i] = self._linear_interpolate(
+                sp0, sp1, y0, y1, self.specific_power
+            )
+
+        # 4) Final interpolation along the Enrichment axis → shape (n_out,)
+        final = self._linear_interpolate(
+            e0, e1, interp_sp[0], interp_sp[1], self.enrichment
+        )
+
+        return pd.Series(final, index=self.output_cols)
