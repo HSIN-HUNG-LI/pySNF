@@ -11,7 +11,11 @@ from pathlib import Path
 
 from base import PredictSNFs_interpolate
 from FrameViewer.BaseFrame import DataFrameViewer
-from io_file import load_dataset, create_output_dir, write_excel, store_data
+from io_file import (
+    load_dataset,
+    save_PredData,
+    get_grid_ParqFile_path,
+)
 
 
 class PredictionFrame(tk.Frame):
@@ -22,22 +26,20 @@ class PredictionFrame(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-
+        self.grid_data = pd.read_parquet(get_grid_ParqFile_path())
         self.save_var = tk.BooleanVar(value=True)
         self._running = False
+        self.input_required = ["Enrich", "SP", "Burnup", "Cool"]
         self.cols_all = [
-            "DH(Watts/all)",
-            "FN(n/s/all)",
-            "FG(r/s/all)",
-            "HG(r/s/all)",
+            "DH(Watts)",
+            "FN(n/s)",
+            "FG(r/s)",
+            "HG(r/s)",
         ]
 
         self._setup_scrollable_canvas()
         self._build_ui()
-        self.multi_text.insert(
-            "1.0",
-            "Read all stdh dataset from [test_files] folder to compute sum of source term and decay heat with nuclide weight and activity",
-        )
+        self._log_initial_message()
 
     def _setup_scrollable_canvas(self):
         """Create a scrollable canvas with an inner frame."""
@@ -63,20 +65,37 @@ class PredictionFrame(tk.Frame):
     def _build_ui(self):
         """Set up controls, log area, and DataFrame viewers."""
         # Controls: dataset label, path, year entry, output button, save checkbox
-        controls = tk.Frame(self.inner)
-        controls.pack(fill=tk.X, padx=10, pady=10)
+        row1 = tk.Frame(self.inner)
+        row1.pack(fill=tk.X, padx=10, pady=10)
 
-        tk.Label(controls, text="SNFs dataset:").pack(side=tk.LEFT)
-        entry = tk.Entry(controls, width=40)
-        entry.insert(0, f"Use right button to load Excel file")
+        tk.Label(row1, text="SNFs dataset:").pack(side=tk.LEFT)
+        entry = tk.Entry(row1, width=40)
+        entry.insert(0, f"Use right button to load Excel file and Output")
         entry.config(state="disabled")
         entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(controls, text="Load (file)", command=self.load_list).pack(
+        tk.Button(row1, text="Load and Output", command=self.load_list).pack(
             side=tk.LEFT
         )
-
-        tk.Button(controls, text="Output", command=self._on_output).pack(side=tk.LEFT)
-        tk.Checkbutton(controls, text="Save output", variable=self.save_var).pack(
+        row2 = tk.Frame(self.inner)
+        row2.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(row2, text="Cool Year:").pack(side=tk.LEFT)
+        self.year_entry = tk.Entry(row2, width=10)
+        self.year_entry.insert(0, "42.133")  # Default cool year
+        self.year_entry.pack(side=tk.LEFT, padx=5)
+        tk.Label(row2, text="Burnup(MWD/MTU):").pack(side=tk.LEFT)
+        self.burnup_entry = tk.Entry(row2, width=10)
+        self.burnup_entry.insert(0, "11970.27")  # Default cool year
+        self.burnup_entry.pack(side=tk.LEFT, padx=5)
+        tk.Label(row2, text="Average Power (MW)").pack(side=tk.LEFT)
+        self.sp_entry = tk.Entry(row2, width=10)
+        self.sp_entry.insert(0, "11.59")  # Default cool year
+        self.sp_entry.pack(side=tk.LEFT, padx=5)
+        tk.Label(row2, text="Enrich(%U235)").pack(side=tk.LEFT)
+        self.enrich_entry = tk.Entry(row2, width=10)
+        self.enrich_entry.insert(0, "1.9")  # Default cool year
+        self.enrich_entry.pack(side=tk.LEFT, padx=5)
+        tk.Button(row2, text="Output", command=self._on_output).pack(side=tk.LEFT)
+        tk.Checkbutton(row2, text="Save output", variable=self.save_var).pack(
             side=tk.LEFT
         )
 
@@ -87,29 +106,9 @@ class PredictionFrame(tk.Frame):
         # Data viewers
         self.STDH_viewer = self._make_viewer(
             self.inner,
-            150,
+            300,
             self.cols_all,
-            "Source Term & Decay Heat",
-        )
-
-        container = tk.Frame(self.inner)
-        container.pack(fill=tk.X, padx=10, pady=5)
-
-        self.Gram_viewer = self._make_viewer(
-            container,
-            200,
-            ["nuclide", "gram/all"],
-            "Weight (gram)",
-            side=tk.LEFT,
-            expand=True,
-        )
-        self.Ci_viewer = self._make_viewer(
-            container,
-            200,
-            ["nuclide", "Ci/all"],
-            "Activity (Ci)",
-            side=tk.LEFT,
-            expand=True,
+            "Predictions in Source Term & Decay Heat",
         )
 
     def _make_viewer(
@@ -130,15 +129,30 @@ class PredictionFrame(tk.Frame):
         viewer.pack(fill=tk.BOTH, expand=True)
         return viewer
 
+    def _clear_viewers(self):
+        # Clear all rows in viewer's tree
+        for iid in self.STDH_viewer.tree.get_children():
+            self.STDH_viewer.tree.delete(iid)
+
+    def _insert_rows(self, viewer: DataFrameViewer, df: pd.DataFrame):
+        # Insert DataFrame rows into viewer
+        for vals in df.itertuples(index=False, name=None):
+            viewer.tree.insert("", "end", values=vals)
+
     def _log_initial_message(self):
+        self.multi_text.delete("1.0", tk.END)
+        self.multi_text.insert(
+            "1.0",
+            "Two ways to predict source term and decay heat (ST&DH)\n First: Read dataset (Contain [Enrich, SP, Burnup, Cool] column ) or use file in [test_files] folder to compute ST&DH \n Second: Enter information above and click output \n (Only display first 100 row)",
+        )
+
+    def _log_file_message(self):
         """Display initial dataset summary in the log with highlighted SNF count."""
         self.multi_text.delete("1.0", tk.END)
         self.multi_text.tag_configure(
             "highlight", font=("TkDefaultFont", 10, "bold", "underline")
         )
-        self.multi_text.insert(
-            "1.0", f"From ~/{self.df_path} \nRead excel file and Load "
-        )
+        self.multi_text.insert("1.0", f"From ~/{self.df_path} \nRead file and Load ")
         self.multi_text.insert(tk.END, str(self.n_snfs), "highlight")
         self.multi_text.insert(
             tk.END,
@@ -148,26 +162,6 @@ class PredictionFrame(tk.Frame):
                 "processing 14,000 files (~5.5M rows).\n"
             ),
         )
-
-    def _on_output(self):
-        """Start processing if inputs are valid."""
-        if self.df.empty:
-            messagebox.showerror("Error", "Dataset empty.")
-            return
-
-        # Reset log and show initial message in bold
-        self.multi_text.delete("1.0", tk.END)
-        self.multi_text.tag_configure(
-            "highlight", font=("TkDefaultFont", 15, "bold", "underline")
-        )
-        self._log_initial_message()
-
-        # Show progress dialog
-        self._running = True
-        self._show_running_dialog()
-
-        # Background computation
-        threading.Thread(target=self._run_search_all, args=(), daemon=True).start()
 
     def _show_running_dialog(self):
         """Modal dialog showing elapsed time and an option to cancel."""
@@ -197,64 +191,125 @@ class PredictionFrame(tk.Frame):
     def load_list(self):
         """Load SNF names from a text/CSV file into the selection list."""
 
-        self.df_path = Path(filedialog.askopenfilename(
-            filetypes=[("Excel or CSV", "*.txt *.csv")]
-        ))
+        self.df_path = Path(
+            filedialog.askopenfilename(filetypes=[("Excel or CSV", "*.txt *.csv")])
+        )
         if not self.df_path:
             messagebox.showerror("Error", "No valid Path.")
             return
         try:
-            self.df = load_dataset(
+            self.df_in = load_dataset(
                 self.df_path
             )  # Change for input from button "load file"
-            self.n_snfs = len(self.df)
-            self._log_initial_message()
+            self.df_in = self.df_in.head(50)
+            self.n_snfs = len(self.df_in)
+            self._running = True
+            # Show the elapsed-time dialog
+            self._show_running_dialog()
+            # Background computation
+            threading.Thread(target=self.run_prediction, args=(), daemon=True).start()
+
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
+    @staticmethod
+    def _format(val):
+        try:
+            return f"{val:.2e}"
+        except (ValueError, TypeError):
+            return val
+        
+    def get_parameters_dataframe(self) -> pd.DataFrame | None:
+        """
+        Read and validate the four Entry fields as floats.
+        Returns a one-row DataFrame with columns ['Enrich','SP','Burnup','Cool'],
+        or None (and shows an error) if any value is invalid.
+        """
+        fields = {
+            "Enrich": self.enrich_entry,
+            "SP":     self.sp_entry,
+            "Burnup": self.burnup_entry,
+            "Cool":   self.year_entry,  # cooling time
+        }
+        data: dict[str, float] = {}
+        for name, widget in fields.items():
+            text = widget.get().strip()
+            try:
+                data[name] = float(text)
+            except ValueError:
+                messagebox.showerror("Error", f"{name} must be a float.")
+                return None
 
-    def run_prediction(
-        self,
-        data_dir: Path,
-        grid_data: pd.DataFrame,
-    ) -> None:
+        # Build a one-row DataFrame
+        return pd.DataFrame([data])
+
+    def _on_output(self):
         """
-        Load input data, perform 4D interpolation for each row, and save results.
+        Handler for the "Output" button.
+        Clears the log, validates inputs, then kicks off prediction.
         """
-        # Define parameter spaces
-        enrichment_space = np.arange(1.5, 6.1, 0.5)
-        specific_power_space = np.arange(5, 46, 5)
+        # Reset log
+        self.multi_text.delete("1.0", tk.END)
+        self.multi_text.insert("1.0", "Compute by input parameters… ")
+
+        # Validate & fetch inputs
+        df_in = self.get_parameters_dataframe()
+        if df_in is None:
+            return  # error dialog already shown
+
+        self.df_in = df_in
+        self.run_prediction()
+
+    def run_prediction(self) -> None:
+        """
+        Perform per-row interpolation, update the UI, 
+        and save results if requested.
+        """
+        # Pre-bind for speed & clarity
+        PredictClass = PredictSNFs_interpolate
+        grid_data    = self.grid_data
+        n_cases      = len(self.df_in)
+        self.n_snfs  = n_cases
+        self._running = True
+
+        # Define parameter grids once
+        enrich_space = np.arange(1.5,  6.1,   0.5)
+        sp_space     = np.arange(5,    46,    5)
         burnup_space = np.arange(5000, 74100, 3000)
-        cooling_time_space = np.logspace(-5.75, 6.215, 150, base=math.e)
+        cool_space   = np.logspace(-5.75, 6.215, 150, base=math.e)
+        out_cols     = [f"{p}_prediction" for p in ("DH","FN","HG","FG")]
 
-        output_cols = [f"{param}_prediction" for param in ['DH', 'FN', 'HG', 'FG']]
-
-        # Read original data
-        df_in = load_dataset(data_dir /"all_stdh_dataset.csv")
-        df_in = df_in.head(200)
-        # Collect predictions
-        predictions: list[pd.Series] = []
-        for i, (_, row) in enumerate(df_in.iterrows()):
+        # Generate all predictions
+        series_list: list[pd.Series] = []
+        for i, (_, row) in enumerate(self.df_in.iterrows()):
             if i % 100 == 0:
-                print(f"Calculated {i} cases…")
+                print(f"Calculated {i}/{n_cases} cases…")
 
-            assembler = PredictSNFs_interpolate(
+            assembler = PredictClass(
                 grid_data,
-                row['Enrich'],
-                row['Burnup'],
-                row['SP'],
-                row['Cool'],
-                enrichment_space,
-                specific_power_space,
-                burnup_space,
-                cooling_time_space,
-                output_cols
+                row["Enrich"],
+                row["Burnup"],
+                row["SP"],
+                row["Cool"],
+                enrich_space, sp_space, burnup_space, cool_space,
+                out_cols
             )
-            predictions.append(assembler.interpolate())
+            series_list.append(assembler.interpolate())
 
-        df_preds = pd.DataFrame(predictions)
-        df_out = pd.concat([df_in.reset_index(drop=True), df_preds.reset_index(drop=True)], axis=1)
+        # Build DataFrame and format every numeric cell in scientific notation
+        df_preds = pd.DataFrame(series_list)
+        # Update the treeview
+        self._clear_viewers()
+        self._insert_rows(self.STDH_viewer, pd.DataFrame([ser.map(self._format) for ser in series_list[:100]]))
 
-        # Save results
-        output_filename = f"{pd.Timestamp.now().strftime('%Y%m%d')}_output.csv"
-        store_data(df_out, output_filename, data_dir / 'output')
+        # Stop timer dialog
+        self._running = False
+
+        # Save if checkbox is checked
+        if self.save_var.get():
+            df_out = pd.concat(
+                [self.df_in.reset_index(drop=True),
+                df_preds.reset_index(drop=True)],
+                axis=1
+            )
+            save_PredData(df_out)
