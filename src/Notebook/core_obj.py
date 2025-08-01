@@ -17,6 +17,19 @@ class SNFParquetConverter:
         """
         self.input_folder = Path(input_folder)
         self.output_file = Path(output_file)
+        
+    def convert_single_to_parquet(self) -> None:
+        files_path = self.input_folder
+        suffix = files_path.suffix.lower()
+        if suffix == ".csv":
+            df = pd.read_csv(files_path, index_col=0, encoding="utf-8-sig", memory_map=True)
+        else:  # .xls or .xlsx
+            df = pd.read_excel(files_path, index_col=0, engine="openpyxl")
+        df.to_parquet(self.output_file)
+        print(
+            f"Wrote single file to parq {df.shape[0]} rows "
+            f"from {len(df)} file(s) into '{self.output_file}'."
+        )
 
     def convert_to_parquet(self) -> None:
         """
