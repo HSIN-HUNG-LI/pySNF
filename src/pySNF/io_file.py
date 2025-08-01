@@ -5,7 +5,12 @@ from tkinter import messagebox
 from datetime import datetime
 from pathlib import Path
 from typing import Union
+import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 def get_stdh_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
@@ -24,20 +29,64 @@ def get_output_dir_path() -> Path:
     data_file = project_root / "output"
     return Path(data_file)
 
+def get_grid_database_path() -> Path:
+    project_root = Path(__file__).resolve().parents[2]
+    data_file = project_root / "data" / "grid_database" / "database_weighted.xlsx"
+    return Path(data_file)
 
-def load_dataset(path: Union[str, Path]) -> pd.DataFrame:
+def load_dataset(    
+    file_path: Path,
+) -> pd.DataFrame:
     """
     Load a CSV dataset from the given path. Shows an error dialog if the file
     is missing or cannot be read, and returns an empty DataFrame on failure.
     """
-    if not os.path.exists(path):
-        messagebox.showerror("Error", f"File '{path}' not found.")
+    # file_path = data_directory / file_name
+    extension = file_path.suffix.lower()
+    if not os.path.exists(file_path):
+        messagebox.showerror("Error", f"File '{file_path}' not found.")
         sys.exit(1)
     try:
-        return pd.read_csv(path)
+        if extension in {".csv"}:
+            # Use memory_map for faster I/O on large CSVs
+            df = pd.read_csv(file_path, header=0, memory_map=True)
+        elif extension in {".xls", ".xlsx"}:
+            # Explicitly specify engine for consistency
+            df = pd.read_excel(file_path, header=0, engine="openpyxl")
+        else:
+            messagebox.showerror(
+                "Unsupported file extension '%s'. Please provide a .csv or .xlsx file.",
+                extension
+            )
+            return pd.DataFrame()
+        logging.info("Successfully read %s \n(%d rows, %d columns)",
+                     file_path, df.shape[0], df.shape[1])
+        return df
+    
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to read '{path}': {e}")
+        messagebox.showerror("Error", f"Failed to read '{file_path}': {e}")
         sys.exit(1)
+
+
+
+def store_data(df: pd.DataFrame, filename: str, output_dir: Path) -> None:
+    """
+    Save a DataFrame to CSV or Excel in the specified directory.
+
+    Parameters:
+    - df: pandas DataFrame to save
+    - filename: name of the output file (must end with .csv or .xlsx)
+    - output_dir: Path to directory where file will be saved
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filepath = output_dir / filename
+
+    if filename.endswith('.csv'):
+        df.to_csv(filepath, index=False)
+    elif filename.endswith('.xlsx'):
+        df.to_excel(filepath, index=False)
+    else:
+        messagebox.showerror("Error", f"Unsupported file format: use .csv or .xlsx")
 
 
 def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
