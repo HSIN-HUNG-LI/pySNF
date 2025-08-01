@@ -6,6 +6,7 @@ import pandas as pd
 from collections import defaultdict
 from typing import Literal
 from operator import itemgetter
+from pathlib import Path
 
 from base import SNFProcessor
 from FrameViewer.BaseFrame import DataFrameViewer
@@ -213,9 +214,9 @@ class AllSNFsFrame(tk.Frame):
     def load_list(self):
         """Load SNF names from a text/CSV file into the selection list."""
 
-        self.df_path = filedialog.askopenfilename(
+        self.df_path = Path(filedialog.askopenfilename(
             filetypes=[("Text & CSV", "*.txt *.csv")]
-        )
+        ))
         if not self.df_path:
             messagebox.showerror("Error", "No valid Path.")
             return
