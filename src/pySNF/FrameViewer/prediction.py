@@ -1,15 +1,17 @@
 import threading
 import time
+import math
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import pandas as pd
-from collections import defaultdict
+import numpy as np
 from typing import Literal
-from operator import itemgetter
+from pathlib import Path
 
-from base import SNFProcessor
+
+from base import PredictSNFs_interpolate
 from FrameViewer.BaseFrame import DataFrameViewer
-from io_file import load_dataset, create_output_dir, write_excel
+from io_file import load_dataset, create_output_dir, write_excel, store_data
 
 
 class PredictionFrame(tk.Frame):
@@ -72,10 +74,6 @@ class PredictionFrame(tk.Frame):
         tk.Button(controls, text="Load (file)", command=self.load_list).pack(
             side=tk.LEFT
         )
-        tk.Label(controls, text="Year (2022-2522):").pack(side=tk.LEFT)
-        self.year_entry = tk.Entry(controls, width=10)
-        self.year_entry.insert(0, "2025")
-        self.year_entry.pack(side=tk.LEFT, padx=5)
 
         tk.Button(controls, text="Output", command=self._on_output).pack(side=tk.LEFT)
         tk.Checkbutton(controls, text="Save output", variable=self.save_var).pack(
@@ -199,9 +197,9 @@ class PredictionFrame(tk.Frame):
     def load_list(self):
         """Load SNF names from a text/CSV file into the selection list."""
 
-        self.df_path = filedialog.askopenfilename(
-            filetypes=[("Text & CSV", "*.txt *.csv")]
-        )
+        self.df_path = Path(filedialog.askopenfilename(
+            filetypes=[("Excel or CSV", "*.txt *.csv")]
+        ))
         if not self.df_path:
             messagebox.showerror("Error", "No valid Path.")
             return
@@ -214,75 +212,49 @@ class PredictionFrame(tk.Frame):
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
-    def _run_search_all(self):
-        """Compute aggregates for STDH, grams, and Ci across all SNFs."""
-        stdh_totals = dict.fromkeys(self.cols_all, 0.0)
-        gram_totals = defaultdict(float)
-        ci_totals = defaultdict(float)
 
-        ### Have to find out the cooling time in year
-        year = 2026
-        for name in self.df["SNF_id"]:
-            if not self._running:
-                break
-            proc = SNFProcessor(series_name=name, target_year=year)
-            df_stdh = proc.compute_stdh()
-            df_stdh.columns = self.cols_all
-            # Sum STDH columns
-            for key in self.cols_all:
-                stdh_totals[key] += (
-                    pd.to_numeric(df_stdh.get(key, pd.Series()), errors="coerce")
-                    .fillna(0)
-                    .sum()
-                )
+    def run_prediction(
+        self,
+        data_dir: Path,
+        grid_data: pd.DataFrame,
+    ) -> None:
+        """
+        Load input data, perform 4D interpolation for each row, and save results.
+        """
+        # Define parameter spaces
+        enrichment_space = np.arange(1.5, 6.1, 0.5)
+        specific_power_space = np.arange(5, 46, 5)
+        burnup_space = np.arange(5000, 74100, 3000)
+        cooling_time_space = np.logspace(-5.75, 6.215, 150, base=math.e)
 
-            # Aggregate top nuclides for mass and activity
-            for func, col, totals in (
-                (proc.compute_concentration, "gram/assy.", gram_totals),
-                (proc.compute_activity, "Ci/assy.", ci_totals),
-            ):
-                for nuc, val in func().head(20)[["nuclide", col]].values:
-                    totals[nuc] += float(pd.to_numeric(val, errors="coerce") or 0)
+        output_cols = [f"{param}_prediction" for param in ['DH', 'FN', 'HG', 'FG']]
 
-        # If saving is enabled, write out to Excel
-        if self.save_var.get():  #  only save when the checkbox/variable is True
-            #  create a timestamped directory under "Results_All_SNFs"
-            output_dir = create_output_dir(parent_folder_name="Results_All_SNFs")
-            #  build DataFrames for each sheet
-            df_stdh_tot = pd.DataFrame([stdh_totals], columns=self.cols_all)
-            df_gram_tot = pd.DataFrame(
-                sorted(gram_totals.items(), key=itemgetter(1), reverse=True),
-                columns=["nuclide", "gram/all"],
+        # Read original data
+        df_in = load_dataset(data_dir /"all_stdh_dataset.csv")
+        df_in = df_in.head(200)
+        # Collect predictions
+        predictions: list[pd.Series] = []
+        for i, (_, row) in enumerate(df_in.iterrows()):
+            if i % 100 == 0:
+                print(f"Calculated {i} cases…")
+
+            assembler = PredictSNFs_interpolate(
+                grid_data,
+                row['Enrich'],
+                row['Burnup'],
+                row['SP'],
+                row['Cool'],
+                enrichment_space,
+                specific_power_space,
+                burnup_space,
+                cooling_time_space,
+                output_cols
             )
-            df_ci_tot = pd.DataFrame(
-                sorted(ci_totals.items(), key=itemgetter(1), reverse=True),
-                columns=["nuclide", "Ci/all"],
-            )
-            #  choose a meaningful file name
-            file_name = f"All_SNFs_{year}"
-            #  use the same processor instance (or any) to call the static method
-            write_excel(df_stdh_tot, df_ci_tot, df_gram_tot, output_dir, file_name)
+            predictions.append(assembler.interpolate())
 
-        # Display results on the main thread
-        self.after(
-            0, lambda: self._display_results(stdh_totals, gram_totals, ci_totals)
-        )
+        df_preds = pd.DataFrame(predictions)
+        df_out = pd.concat([df_in.reset_index(drop=True), df_preds.reset_index(drop=True)], axis=1)
 
-    def _display_results(self, stdh_totals, gram_totals, ci_totals):
-        """Load computed totals into DataFrame viewers."""
-        if hasattr(self, "_dlg"):
-            self._dlg.destroy()
-        self.STDH_viewer.load_dataframe(pd.DataFrame([stdh_totals]))
-        self.Gram_viewer.load_dataframe(
-            pd.DataFrame(
-                sorted(gram_totals.items(), key=itemgetter(1), reverse=True),
-                columns=["nuclide", "gram/all"],
-            )
-        )
-        self.Ci_viewer.load_dataframe(
-            pd.DataFrame(
-                sorted(ci_totals.items(), key=itemgetter(1), reverse=True),
-                columns=["nuclide", "Ci/all"],
-            )
-        )
-        self._running = False
+        # Save results
+        output_filename = f"{pd.Timestamp.now().strftime('%Y%m%d')}_output.csv"
+        store_data(df_out, output_filename, data_dir / 'output')
