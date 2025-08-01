@@ -22,8 +22,8 @@ class SearchApp(tk.Tk):
         self.df = load_dataset(self.df_path)
 
         # Define available modes
-        modes = ["Introduction", "Single SNF", "Compare SNFs", "Multiple SNFs", "All SNFs"]
-        self.mode_var = tk.StringVar(value=modes[2])
+        modes = ["Introduction", "Single SNF", "Compare SNFs", "Multiple SNFs", "All SNFs", "Prediction"]
+        self.mode_var = tk.StringVar(value=modes[5])
 
         # Mode selection dropdown
         tk.OptionMenu(
