@@ -29,9 +29,9 @@ def get_output_dir_path() -> Path:
     data_file = project_root / "output"
     return Path(data_file)
 
-def get_grid_database_path() -> Path:
+def get_grid_ParqFile_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
-    data_file = project_root / "data" / "grid_database" / "database_weighted.xlsx"
+    data_file = project_root / "data" / "grid_database" / "grid_database.parq"
     return Path(data_file)
 
 def load_dataset(    
@@ -67,26 +67,18 @@ def load_dataset(
         messagebox.showerror("Error", f"Failed to read '{file_path}': {e}")
         sys.exit(1)
 
-
-
-def store_data(df: pd.DataFrame, filename: str, output_dir: Path) -> None:
+def save_PredData(df: pd.DataFrame) -> None:
     """
-    Save a DataFrame to CSV or Excel in the specified directory.
-
+    Save a DataFrame to CSV in the specified directory.
     Parameters:
     - df: pandas DataFrame to save
-    - filename: name of the output file (must end with .csv or .xlsx)
-    - output_dir: Path to directory where file will be saved
     """
+    output_dir = get_output_dir_path() / "Prediction"
+    filename = f"{pd.Timestamp.now().strftime("%Y-%m-%d_%H-%M-%S")}_output.csv"
     output_dir.mkdir(parents=True, exist_ok=True)
     filepath = output_dir / filename
+    df.to_csv(filepath, index=False)
 
-    if filename.endswith('.csv'):
-        df.to_csv(filepath, index=False)
-    elif filename.endswith('.xlsx'):
-        df.to_excel(filepath, index=False)
-    else:
-        messagebox.showerror("Error", f"Unsupported file format: use .csv or .xlsx")
 
 
 def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
