@@ -188,37 +188,13 @@ class PredictionFrame(tk.Frame):
         )
         self.after(1000, self._update_timer)
 
-    def load_list(self):
-        """Load SNF names from a text/CSV file into the selection list."""
-
-        self.df_path = Path(
-            filedialog.askopenfilename(filetypes=[("Excel or CSV", "*.txt *.csv")])
-        )
-        if not self.df_path:
-            messagebox.showerror("Error", "No valid Path.")
-            return
-        try:
-            self.df_in = load_dataset(
-                self.df_path
-            )  # Change for input from button "load file"
-            self.df_in = self.df_in.head(50)
-            self.n_snfs = len(self.df_in)
-            self._running = True
-            # Show the elapsed-time dialog
-            self._show_running_dialog()
-            # Background computation
-            threading.Thread(target=self.run_prediction, args=(), daemon=True).start()
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-
     @staticmethod
     def _format(val):
         try:
             return f"{val:.2e}"
         except (ValueError, TypeError):
             return val
-        
+
     def get_parameters_dataframe(self) -> pd.DataFrame | None:
         """
         Read and validate the four Entry fields as floats.
@@ -227,9 +203,9 @@ class PredictionFrame(tk.Frame):
         """
         fields = {
             "Enrich": self.enrich_entry,
-            "SP":     self.sp_entry,
+            "SP": self.sp_entry,
             "Burnup": self.burnup_entry,
-            "Cool":   self.year_entry,  # cooling time
+            "Cool": self.year_entry,  # cooling time
         }
         data: dict[str, float] = {}
         for name, widget in fields.items():
@@ -260,56 +236,90 @@ class PredictionFrame(tk.Frame):
         self.df_in = df_in
         self.run_prediction()
 
+    def load_list(self):
+        """Load SNF names from a text/CSV file into the selection list."""
+
+        self.df_path = Path(
+            filedialog.askopenfilename(filetypes=[("Excel or CSV", "*.txt *.csv")])
+        )
+        if not self.df_path:
+            messagebox.showerror("Error", "No valid Path.")
+            return
+        try:
+            self.df_in = load_dataset(
+                self.df_path
+            )  # Change for input from button "load file"
+
+            # ================================================================
+            # self.df_in = self.df_in.iloc[969:975]
+            # self.df_in.columns = ["Enrich", "SP", "Burnup", "Cool"]
+            # ================================================================
+            self.n_snfs = len(self.df_in)
+            self._running = True
+            # Show the elapsed-time dialog
+            self._show_running_dialog()
+            # Background computation
+            threading.Thread(target=self.run_prediction, args=(), daemon=True).start()
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
     def run_prediction(self) -> None:
         """
-        Perform per-row interpolation, update the UI, 
+        Perform per-row interpolation, update the UI,
         and save results if requested.
         """
         # Pre-bind for speed & clarity
-        PredictClass = PredictSNFs_interpolate
-        grid_data    = self.grid_data
-        n_cases      = len(self.df_in)
-        self.n_snfs  = n_cases
+        grid_data = self.grid_data
         self._running = True
 
         # Define parameter grids once
-        enrich_space = np.arange(1.5,  6.1,   0.5)
-        sp_space     = np.arange(5,    46,    5)
+        enrich_space = np.arange(1.5, 6.1, 0.5)
+        sp_space = np.arange(5, 46, 5)
         burnup_space = np.arange(5000, 74100, 3000)
-        cool_space   = np.logspace(-5.75, 6.215, 150, base=math.e)
-        out_cols     = [f"{p}_prediction" for p in ("DH","FN","HG","FG")]
-
-        # Generate all predictions
+        cool_space = np.logspace(-5.75, 6.215, 150, base=math.e)
+        out_cols = [f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")]
         series_list: list[pd.Series] = []
-        for i, (_, row) in enumerate(self.df_in.iterrows()):
-            if i % 100 == 0:
-                print(f"Calculated {i}/{n_cases} cases…")
 
-            assembler = PredictClass(
-                grid_data,
-                row["Enrich"],
-                row["Burnup"],
-                row["SP"],
-                row["Cool"],
-                enrich_space, sp_space, burnup_space, cool_space,
-                out_cols
+        # Copy dataframe
+        self.df_in_copy = self.df_in.copy()
+        desired_cols = ["Enrich", "SP", "Burnup", "Cool"]
+        self.df_in_copy = self.df_in_copy.loc[:, desired_cols].copy()
+
+        PredAssy = PredictSNFs_interpolate(
+            grid_data,
+            enrich_space,
+            sp_space,
+            burnup_space,
+            cool_space,
+            out_cols,
+        )
+        for i, (_, row) in enumerate(self.df_in_copy.iterrows()):
+            if i % 1000 == 0:
+                print(f"Calculated {i}/{self.n_snfs} cases…")
+            series_list.append(
+                PredAssy.interpolate(
+                    row["Enrich"],
+                    row["Burnup"],
+                    row["SP"],
+                    row["Cool"],
+                )
             )
-            series_list.append(assembler.interpolate())
 
         # Build DataFrame and format every numeric cell in scientific notation
         df_preds = pd.DataFrame(series_list)
         # Update the treeview
         self._clear_viewers()
-        self._insert_rows(self.STDH_viewer, pd.DataFrame([ser.map(self._format) for ser in series_list[:100]]))
-
+        self._insert_rows(
+            self.STDH_viewer,
+            pd.DataFrame([ser.map(self._format) for ser in series_list[:100]]),
+        )
         # Stop timer dialog
         self._running = False
-
         # Save if checkbox is checked
         if self.save_var.get():
             df_out = pd.concat(
-                [self.df_in.reset_index(drop=True),
-                df_preds.reset_index(drop=True)],
-                axis=1
+                [self.df_in.reset_index(drop=True), df_preds.reset_index(drop=True)],
+                axis=1,
             )
             save_PredData(df_out)
