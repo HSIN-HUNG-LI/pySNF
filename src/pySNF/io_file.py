@@ -8,9 +8,9 @@ from typing import Union
 import logging
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
+
 
 def get_stdh_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
@@ -29,12 +29,14 @@ def get_output_dir_path() -> Path:
     data_file = project_root / "output"
     return Path(data_file)
 
+
 def get_grid_ParqFile_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
     data_file = project_root / "data" / "grid_database" / "grid_database.parq"
     return Path(data_file)
 
-def load_dataset(    
+
+def load_dataset(
     file_path: Path,
 ) -> pd.DataFrame:
     """
@@ -56,16 +58,21 @@ def load_dataset(
         else:
             messagebox.showerror(
                 "Unsupported file extension '%s'. Please provide a .csv or .xlsx file.",
-                extension
+                extension,
             )
             return pd.DataFrame()
-        logging.info("Successfully read %s \n(%d rows, %d columns)",
-                     file_path, df.shape[0], df.shape[1])
+        logging.info(
+            "Successfully read %s \n(%d rows, %d columns)",
+            file_path,
+            df.shape[0],
+            df.shape[1],
+        )
         return df
-    
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to read '{file_path}': {e}")
         sys.exit(1)
+
 
 def save_PredData(df: pd.DataFrame) -> None:
     """
@@ -78,7 +85,6 @@ def save_PredData(df: pd.DataFrame) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     filepath = output_dir / filename
     df.to_csv(filepath, index=False)
-
 
 
 def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
