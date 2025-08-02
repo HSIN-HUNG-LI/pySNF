@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
-
+from itertools import product
 from utils import plot_Gram_Ci, Converter_MTU2ASSY
 from io_file import create_output_dir, get_snfs_dir_path, get_stdh_path
 
@@ -228,10 +228,6 @@ class PredictSNFs_interpolate:
     def __init__(
         self,
         grid_df: pd.DataFrame,
-        enrichment: float,
-        burnup: float,
-        specific_power: float,
-        cooling_time: float,
         enrichment_space: np.ndarray,
         specific_power_space: np.ndarray,
         burnup_space: np.ndarray,
@@ -243,20 +239,21 @@ class PredictSNFs_interpolate:
         self.grid = grid_df.copy()
         self.grid.columns = ["Enrich", "SP", "Burnup", "Cool"] + list(output_cols)
 
-        # Build a MultiIndex for fast point lookups
+        # Normalize dtypes & precision** on all four axes
+        for col in ("Enrich", "SP", "Burnup"):
+            self.grid[col] = self.grid[col].astype(float)
+        # round “Cool” to 6 decimals
+        self.grid["Cool"] = self.grid["Cool"].astype(float).round(6)
+
+        # Also round your target and your space arrays
+
+        self.enrichment_space = np.round(enrichment_space.astype(float), 6)
+        self.specific_power_space = np.round(specific_power_space.astype(float), 6)
+        self.burnup_space = np.round(burnup_space.astype(float), 6)
+        self.cooling_time_space = np.round(cooling_time_space.astype(float), 6)
+
+        # Build the index *after* rounding
         self.grid.set_index(["Enrich", "SP", "Burnup", "Cool"], inplace=True)
-
-        # Store target parameters
-        self.enrichment = enrichment
-        self.burnup = burnup
-        self.specific_power = specific_power
-        self.cooling_time = cooling_time
-
-        # Store the available grid axes
-        self.enrichment_space = enrichment_space
-        self.specific_power_space = specific_power_space
-        self.burnup_space = burnup_space
-        self.cooling_time_space = cooling_time_space
 
         # Keep output column names in a list
         self.output_cols = list(output_cols)
@@ -312,15 +309,27 @@ class PredictSNFs_interpolate:
 
         return grid_vals
 
-    def interpolate(self) -> pd.Series:
+    def interpolate(
+        self,
+        enrichment: float,
+        burnup: float,
+        specific_power: float,
+        cooling_time: float,
+    ) -> pd.Series:
         """
         Perform the 4-step hierarchical interpolation:
         1) along Cool, 2) then Burnup, 3) then SP, 4) then Enrich.
         Returns the final interpolated outputs as a pandas Series.
         """
+
+        self.enrichment = float(enrichment)
+        self.burnup = float(burnup)
+        self.specific_power = float(specific_power)
+        self.cooling_time = round(cooling_time, 6)
+
         # Extract the 16 corner values
         corner = self._get_reduced_grid()
-
+        
         # Precompute all axis bounds
         e0, e1 = self._find_bounds(self.enrichment, self.enrichment_space)
         sp0, sp1 = self._find_bounds(self.specific_power, self.specific_power_space)
