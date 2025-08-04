@@ -14,13 +14,13 @@ logging.basicConfig(
 
 def get_stdh_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
-    data_file = project_root / "data" / "snfs_details" / "all_stdh_dataset.csv"
+    data_file = project_root / "data" / "DataBase_SNFs" / "all_stdh_dataset.csv"
     return Path(data_file)
 
 
 def get_snfs_dir_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
-    data_file = project_root / "data" / "snfs_details"
+    data_file = project_root / "data" / "DataBase_SNFs"
     return Path(data_file)
 
 
@@ -32,7 +32,7 @@ def get_output_dir_path() -> Path:
 
 def get_grid_ParqFile_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
-    data_file = project_root / "data" / "grid_database" / "grid_database.parq"
+    data_file = project_root / "data" / "DataBase_GridPoint" / "grid_database.parq"
     return Path(data_file)
 
 
