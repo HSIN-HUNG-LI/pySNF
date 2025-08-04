@@ -158,7 +158,7 @@ class PredictionFrame(tk.Frame):
             tk.END,
             (
                 " SNFs.\n"
-                "If compute ~6800 fuels, wait >720s,\n"
+                "If compute ~6800 fuels, wait >360s,\n"
                 "processing 14,000 files (~5.5M rows).\n"
             ),
         )
@@ -184,7 +184,7 @@ class PredictionFrame(tk.Frame):
             return
         elapsed = int(time.time() - self._start_time)
         self.elapsed_label.config(
-            text=f"Running {self.n_snfs} SNFs... \nElapsed: {elapsed}s\nIf compute ~6800 fuels, wait >720s,\n"
+            text=f"Running {self.n_snfs} SNFs... \nElapsed: {elapsed}s\nIf compute ~6800 fuels, wait >360s,\n"
         )
         self.after(1000, self._update_timer)
 
@@ -245,25 +245,22 @@ class PredictionFrame(tk.Frame):
         if not self.df_path:
             messagebox.showerror("Error", "No valid Path.")
             return
-        try:
+        else:
             self.df_in = load_dataset(
                 self.df_path
-            )  # Change for input from button "load file"
-
+            )
+            if self.df_in.empty:
+                messagebox.showerror("Error", "Dataset empty.")
+                return
             # ================================================================
             # self.df_in = self.df_in.iloc[969:975]
             # self.df_in.columns = ["Enrich", "SP", "Burnup", "Cool"]
             # ================================================================
             self.n_snfs = len(self.df_in)
             self._running = True
-            # Show the elapsed-time dialog
             self._show_running_dialog()
             # Background computation
             threading.Thread(target=self.run_prediction, args=(), daemon=True).start()
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-
     def run_prediction(self) -> None:
         """
         Perform per-row interpolation, update the UI,
@@ -271,13 +268,21 @@ class PredictionFrame(tk.Frame):
         """
         # Pre-bind for speed & clarity
         grid_data = self.grid_data
-        self._running = True
 
-        # Define parameter grids once
-        enrich_space = np.arange(1.5, 6.1, 0.5)
-        sp_space = np.arange(5, 46, 5)
-        burnup_space = np.arange(5000, 74100, 3000)
+        # ============ Start Exp ============
+        cross_times = 2 
+        enrich_step = 0.5*cross_times
+        sp_step = 5*cross_times
+        burnup_step = 3000*cross_times
+        cool_step = cross_times
+        # ============ End Exp ============
+
+        enrich_space = np.arange(1.5, 6.1, enrich_step)
+        sp_space = np.arange(5, 46, sp_step)
+        burnup_space = np.arange(5000, 74100, burnup_step)
+        # cool_space = np.logspace(-5.75, 6.215, cool_step, base=math.e)
         cool_space = np.logspace(-5.75, 6.215, 150, base=math.e)
+        cool_space = cool_space[1::cool_step]
         out_cols = [f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")]
         series_list: list[pd.Series] = []
 
@@ -295,8 +300,6 @@ class PredictionFrame(tk.Frame):
             out_cols,
         )
         for i, (_, row) in enumerate(self.df_in_copy.iterrows()):
-            if i % 1000 == 0:
-                print(f"Calculated {i}/{self.n_snfs} cases…")
             series_list.append(
                 PredAssy.interpolate(
                     row["Enrich"],
