@@ -18,11 +18,22 @@ class IntroFrame(tk.Frame):
         text.insert(
             tk.END,
             """
-This app is used to explore SNFs data by name.
+🔍 SNFs Dataset Explorer – Application Overview
 
-Please ensure there is a folder named ~/snfs_details in your working directory, containing:
-1. all_stdh_dataset.csv (the main SNF index)
-2. individual weight and activity CSV files for each SNF
+📁 Required Data Structure
+Please ensure the following directory and file structure is correctly set up within your working environment:
+
+~/data/snfs_details/
+1. all_stdh_dataset.csv
+→ Serves as the primary SNF index containing summary information for all fuel entries.
+2. Individual SNF files 
+→ Each file includes weight and activity data specific to a single SNF unit. Filenames must match SNF identifiers.
+
+~/data/grid_database/
+grid_database.parq
+→ A preprocessed grid dataset in Parquet format used for interpolation, prediction, or comparison tasks.
+
+🔧 Important: All files must be properly named and located as described. The application relies on this structure to function correctly. Missing or misnamed files will result in errors during execution.
 
 Copyright © 2025 Laboratory of Prof. Rong-Jiun Sheu, National Tsing Hua University. All rights reserved.
 """,
