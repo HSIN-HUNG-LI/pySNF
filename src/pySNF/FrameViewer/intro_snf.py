@@ -23,13 +23,13 @@ class IntroFrame(tk.Frame):
 📁 Required Data Structure
 Please ensure the following directory and file structure is correctly set up within your working environment:
 
-~/data/snfs_details/
+~/data/DataBase_SNFs/
 1. all_stdh_dataset.csv
 → Serves as the primary SNF index containing summary information for all fuel entries.
 2. Individual SNF files 
 → Each file includes weight and activity data specific to a single SNF unit. Filenames must match SNF identifiers.
 
-~/data/grid_database/
+~/data/DataBase_SNFs/
 grid_database.parq
 → A preprocessed grid dataset in Parquet format used for interpolation, prediction, or comparison tasks.
 
