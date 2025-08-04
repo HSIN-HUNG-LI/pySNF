@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from typing import Union, List
-
+from datetime import datetime
 
 class SNFParquetConverter:
     """
@@ -99,3 +99,19 @@ class SNFParquetConverter:
         filtered = pd.DataFrame(df.loc[mask, :])
 
         return filtered
+
+def create_exp_output_dir(parent_folder_name: Path) -> Path:
+    """
+    Create a timestamped output directory under the specified parent folder.
+
+    Args:
+        parent_folder : Name of the directory under the current working directory where the output folder will be created.
+
+    Returns:
+        Path: Path object pointing to the newly created output directory.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_path = parent_folder_name / "exp_results" / f"{timestamp}_output"
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    return output_path
