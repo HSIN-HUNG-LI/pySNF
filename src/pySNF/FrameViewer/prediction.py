@@ -36,7 +36,12 @@ class PredictionFrame(tk.Frame):
             "FG(r/s)",
             "HG(r/s)",
         ]
-
+        self.snf_stats = {
+            "Enrich": 3.17,
+            "SP": 26.21,
+            "Burnup": 32806.18,
+            "Cool": 24.36,
+        }
         self._setup_scrollable_canvas()
         self._build_ui()
         self._log_initial_message()
@@ -65,37 +70,32 @@ class PredictionFrame(tk.Frame):
     def _build_ui(self):
         """Set up controls, log area, and DataFrame viewers."""
         # Controls: dataset label, path, year entry, output button, save checkbox
-        row1 = tk.Frame(self.inner)
-        row1.pack(fill=tk.X, padx=10, pady=10)
 
-        tk.Label(row1, text="SNFs dataset:").pack(side=tk.LEFT)
-        entry = tk.Entry(row1, width=40)
-        entry.insert(0, f"Use right button to load Excel file and Output")
-        entry.config(state="disabled")
-        entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(row1, text="Load and Output", command=self.load_list).pack(
-            side=tk.LEFT
-        )
-        row2 = tk.Frame(self.inner)
-        row2.pack(fill=tk.X, padx=10, pady=(0, 10))
-        tk.Label(row2, text="Cool Year:").pack(side=tk.LEFT)
-        self.year_entry = tk.Entry(row2, width=10)
-        self.year_entry.insert(0, "42.133")  # Default cool year
-        self.year_entry.pack(side=tk.LEFT, padx=5)
-        tk.Label(row2, text="Burnup(MWD/MTU):").pack(side=tk.LEFT)
-        self.burnup_entry = tk.Entry(row2, width=10)
-        self.burnup_entry.insert(0, "11970.27")  # Default cool year
+        row = tk.Frame(self.inner)
+        row.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(row, text="SNF Spec.:").pack(side=tk.LEFT)
+
+        row1 = tk.Frame(self.inner)
+        row1.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(row1, text="Burnup(MWD/MTU):").pack(side=tk.LEFT)
+        self.burnup_entry = tk.Entry(row1, width=10)
+        self.burnup_entry.insert(0, f"{self.snf_stats['Burnup']}")  # Default cool year
         self.burnup_entry.pack(side=tk.LEFT, padx=5)
-        tk.Label(row2, text="Average Power (MW)").pack(side=tk.LEFT)
-        self.sp_entry = tk.Entry(row2, width=10)
-        self.sp_entry.insert(0, "11.59")  # Default cool year
-        self.sp_entry.pack(side=tk.LEFT, padx=5)
-        tk.Label(row2, text="Enrich(%U235)").pack(side=tk.LEFT)
-        self.enrich_entry = tk.Entry(row2, width=10)
-        self.enrich_entry.insert(0, "1.9")  # Default cool year
+        tk.Label(row1, text="Cooling time(year):").pack(side=tk.LEFT)
+        self.year_entry = tk.Entry(row1, width=10)
+        self.year_entry.insert(0,  f"{self.snf_stats['Cool']}")  # Default cool year
+        self.year_entry.pack(side=tk.LEFT, padx=5)
+        tk.Label(row1, text="Enrich(%U235)").pack(side=tk.LEFT)
+        self.enrich_entry = tk.Entry(row1, width=10)
+        self.enrich_entry.insert(0,  f"{self.snf_stats['Enrich']}")  # Default cool year
         self.enrich_entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(row2, text="Output", command=self._on_output).pack(side=tk.LEFT)
-        tk.Checkbutton(row2, text="Save output", variable=self.save_var).pack(
+        tk.Label(row1, text="Specific Power (MW)").pack(side=tk.LEFT)
+        self.sp_entry = tk.Entry(row1, width=10)
+        self.sp_entry.insert(0,  f"{self.snf_stats['SP']}")  # Default cool year
+        self.sp_entry.pack(side=tk.LEFT, padx=5)
+
+        tk.Button(row1, text="Output", command=self._on_output).pack(side=tk.LEFT)
+        tk.Checkbutton(row1, text="Save output", variable=self.save_var).pack(
             side=tk.LEFT
         )
 
@@ -106,11 +106,21 @@ class PredictionFrame(tk.Frame):
         # Data viewers
         self.STDH_viewer = self._make_viewer(
             self.inner,
-            300,
+            200,
             self.cols_all,
             "Predictions in Source Term & Decay Heat",
         )
+        row2 = tk.Frame(self.inner)
+        row2.pack(fill=tk.X, padx=10, pady=10)
 
+        tk.Label(row2, text="SNFs (batch):").pack(side=tk.LEFT)
+        entry = tk.Entry(row2, width=40)
+        entry.insert(0, f"Use right button to load Excel file and Output")
+        entry.config(state="disabled")
+        entry.pack(side=tk.LEFT, padx=5)
+        tk.Button(row2, text="Load and Output", command=self.load_list).pack(
+            side=tk.LEFT
+        )
     def _make_viewer(
         self,
         parent,
