@@ -1,7 +1,7 @@
 # Input file / Results(output)
 output/
 data/
-src/Notebook/Exp_results/
+src/Notebook/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
