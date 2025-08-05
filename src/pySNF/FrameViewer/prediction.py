@@ -73,25 +73,25 @@ class PredictionFrame(tk.Frame):
 
         row = tk.Frame(self.inner)
         row.pack(fill=tk.X, padx=10, pady=(0, 10))
-        tk.Label(row, text="SNF Spec.:").pack(side=tk.LEFT)
+        tk.Label(row, text="SNF Spec:").pack(side=tk.LEFT)
 
         row1 = tk.Frame(self.inner)
         row1.pack(fill=tk.X, padx=10, pady=(0, 10))
         tk.Label(row1, text="Burnup (MWd/MTU):").pack(side=tk.LEFT)
         self.burnup_entry = tk.Entry(row1, width=10)
-        self.burnup_entry.insert(0, f"{self.snf_stats['Burnup']}")  
+        self.burnup_entry.insert(0, f"{self.snf_stats['Burnup']}")
         self.burnup_entry.pack(side=tk.LEFT, padx=5)
         tk.Label(row1, text="Cooling time (Year):").pack(side=tk.LEFT)
         self.year_entry = tk.Entry(row1, width=10)
-        self.year_entry.insert(0, f"{self.snf_stats['Cool']}")  
+        self.year_entry.insert(0, f"{self.snf_stats['Cool']}")
         self.year_entry.pack(side=tk.LEFT, padx=5)
         tk.Label(row1, text="Enrichment (%U235)").pack(side=tk.LEFT)
         self.enrich_entry = tk.Entry(row1, width=10)
-        self.enrich_entry.insert(0, f"{self.snf_stats['Enrich']}")  
+        self.enrich_entry.insert(0, f"{self.snf_stats['Enrich']}")
         self.enrich_entry.pack(side=tk.LEFT, padx=5)
         tk.Label(row1, text="Specific Power (MW)").pack(side=tk.LEFT)
         self.sp_entry = tk.Entry(row1, width=10)
-        self.sp_entry.insert(0, f"{self.snf_stats['SP']}")  
+        self.sp_entry.insert(0, f"{self.snf_stats['SP']}")
         self.sp_entry.pack(side=tk.LEFT, padx=5)
 
         tk.Button(row1, text="Output", command=self._on_output).pack(side=tk.LEFT)
@@ -113,9 +113,9 @@ class PredictionFrame(tk.Frame):
         row2 = tk.Frame(self.inner)
         row2.pack(fill=tk.X, padx=10, pady=10)
 
-        tk.Label(row2, text="SNFs (batch):").pack(side=tk.LEFT)
+        tk.Label(row2, text="SNFs Specs by a batch file:").pack(side=tk.LEFT)
         entry = tk.Entry(row2, width=40)
-        entry.insert(0, f"Use right button to load Excel file and Output")
+        entry.insert(0, f"Use right button to load file and Output")
         entry.config(state="disabled")
         entry.pack(side=tk.LEFT, padx=5)
         tk.Button(row2, text="Load and Output", command=self.load_list).pack(
@@ -154,7 +154,8 @@ class PredictionFrame(tk.Frame):
         self.multi_text.delete("1.0", tk.END)
         self.multi_text.insert(
             "1.0",
-            "Two ways to predict source term and decay heat (ST&DH)\n First: Read dataset (Contain [Enrich, SP, Burnup, Cool] column ) or use file in [test_files] folder to compute ST&DH \n Second: Enter information above and click output \n (Only display first 100 row)",
+            "Two ways to predict source term and decay heat (ST&DH)\n First: Read dataset (Contain [Enrich, SP, Burnup, Cool] column ) "
+            "or use file in [TEST_prediction] folder to compute ST&DH \n Second: Enter information above and click output \n (Only display first 100 row)",
         )
 
     def _log_file_message(self):
