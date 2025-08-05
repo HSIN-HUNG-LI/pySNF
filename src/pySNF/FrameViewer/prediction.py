@@ -253,7 +253,7 @@ class PredictionFrame(tk.Frame):
         """Load SNF names from a text/CSV file into the selection list."""
 
         self.df_path = Path(
-            filedialog.askopenfilename(filetypes=[("Excel or CSV", "*.txt *.csv")])
+            filedialog.askopenfilename(filetypes=[("Excel or CSV", "*.xlsx *.csv")])
         )
         if not self.df_path:
             messagebox.showerror("Error", "No valid Path.")
