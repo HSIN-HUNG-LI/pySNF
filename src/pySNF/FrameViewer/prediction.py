@@ -35,7 +35,7 @@ class PredictionFrame(tk.Frame):
             "DH(Watts)",
             "FN(n/s)",
             "FG(r/s)",
-            "HG(r/s)",
+            "HG(r/s/kgSS304)",
         ]
         self.snf_stats = {
             "Enrich": 3.17,
