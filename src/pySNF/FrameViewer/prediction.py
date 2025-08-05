@@ -31,6 +31,7 @@ class PredictionFrame(tk.Frame):
         self._running = False
         self.input_required = ["Enrich", "SP", "Burnup", "Cool"]
         self.cols_all = [
+            "S/n",
             "DH(Watts)",
             "FN(n/s)",
             "FG(r/s)",
@@ -332,11 +333,13 @@ class PredictionFrame(tk.Frame):
         # Build DataFrame and format every numeric cell in scientific notation
         df_preds = pd.DataFrame(series_list)
         # Update the treeview
+        df_display = pd.DataFrame([ser.map(self._format) for ser in series_list[:100]])
+        # Insert a 1-based serial column "S/n" at position 0
+        df_display.insert(0, "S/n", range(1, len(df_display) + 1))
+        # Update the treeview with the numbered rows
         self._clear_viewers()
-        self._insert_rows(
-            self.STDH_viewer,
-            pd.DataFrame([ser.map(self._format) for ser in series_list[:100]]),
-        )
+        self._insert_rows(self.STDH_viewer, df_display)
+
         # Stop timer dialog
         self._running = False
         # Save if checkbox is checked
