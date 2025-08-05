@@ -77,21 +77,21 @@ class PredictionFrame(tk.Frame):
 
         row1 = tk.Frame(self.inner)
         row1.pack(fill=tk.X, padx=10, pady=(0, 10))
-        tk.Label(row1, text="Burnup(MWD/MTU):").pack(side=tk.LEFT)
+        tk.Label(row1, text="Burnup (MWd/MTU):").pack(side=tk.LEFT)
         self.burnup_entry = tk.Entry(row1, width=10)
-        self.burnup_entry.insert(0, f"{self.snf_stats['Burnup']}")  # Default cool year
+        self.burnup_entry.insert(0, f"{self.snf_stats['Burnup']}")  
         self.burnup_entry.pack(side=tk.LEFT, padx=5)
-        tk.Label(row1, text="Cooling time(year):").pack(side=tk.LEFT)
+        tk.Label(row1, text="Cooling time (Year):").pack(side=tk.LEFT)
         self.year_entry = tk.Entry(row1, width=10)
-        self.year_entry.insert(0,  f"{self.snf_stats['Cool']}")  # Default cool year
+        self.year_entry.insert(0, f"{self.snf_stats['Cool']}")  
         self.year_entry.pack(side=tk.LEFT, padx=5)
-        tk.Label(row1, text="Enrich(%U235)").pack(side=tk.LEFT)
+        tk.Label(row1, text="Enrichment (%U235)").pack(side=tk.LEFT)
         self.enrich_entry = tk.Entry(row1, width=10)
-        self.enrich_entry.insert(0,  f"{self.snf_stats['Enrich']}")  # Default cool year
+        self.enrich_entry.insert(0, f"{self.snf_stats['Enrich']}")  
         self.enrich_entry.pack(side=tk.LEFT, padx=5)
         tk.Label(row1, text="Specific Power (MW)").pack(side=tk.LEFT)
         self.sp_entry = tk.Entry(row1, width=10)
-        self.sp_entry.insert(0,  f"{self.snf_stats['SP']}")  # Default cool year
+        self.sp_entry.insert(0, f"{self.snf_stats['SP']}")  
         self.sp_entry.pack(side=tk.LEFT, padx=5)
 
         tk.Button(row1, text="Output", command=self._on_output).pack(side=tk.LEFT)
@@ -121,6 +121,7 @@ class PredictionFrame(tk.Frame):
         tk.Button(row2, text="Load and Output", command=self.load_list).pack(
             side=tk.LEFT
         )
+
     def _make_viewer(
         self,
         parent,
@@ -256,9 +257,7 @@ class PredictionFrame(tk.Frame):
             messagebox.showerror("Error", "No valid Path.")
             return
         else:
-            self.df_in = load_dataset(
-                self.df_path
-            )
+            self.df_in = load_dataset(self.df_path)
             if self.df_in.empty:
                 messagebox.showerror("Error", "Dataset empty.")
                 return
@@ -271,6 +270,16 @@ class PredictionFrame(tk.Frame):
             self._show_running_dialog()
             # Background computation
             threading.Thread(target=self.run_prediction, args=(), daemon=True).start()
+
+    @staticmethod
+    def run_experiment_GridResolution():
+        """
+        Start the prediction process in varying grid resolutions.
+        This method is called by Notebook to run the experiment.
+        """
+        # Start the prediction in a background thread
+        threading.Thread(target=PredictionFrame.run_prediction, daemon=True).start()
+
     def run_prediction(self) -> None:
         """
         Perform per-row interpolation, update the UI,
@@ -280,10 +289,10 @@ class PredictionFrame(tk.Frame):
         grid_data = self.grid_data
 
         # ============ Start Exp ============
-        cross_times = 2 
-        enrich_step = 0.5*cross_times
-        sp_step = 5*cross_times
-        burnup_step = 3000*cross_times
+        cross_times = 2
+        enrich_step = 0.5 * cross_times
+        sp_step = 5 * cross_times
+        burnup_step = 3000 * cross_times
         cool_step = cross_times
         # ============ End Exp ============
 
