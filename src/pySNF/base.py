@@ -29,20 +29,18 @@ class SNFProcessor:
         self.year = target_year
         self.method = method
 
-        # Load source-term dataset// data_dir: Path = Path.cwd() / "snfs_details"/ "all_snfs_details.parquet",
         self.df_STDH_all = pd.read_csv(st_dataset_path, index_col=False)
         self.SNF_id = series_name
-        self.series_name = self.get_name_by_snf_id(self.df_STDH_all, series_name)
         self.df_STDH_filtered = self.df_STDH_all[
-            self.df_STDH_all["Name"] == self.series_name
+            self.df_STDH_all["SNF_id"] == self.SNF_id
         ]
         self.data_conc = pd.read_csv(
-            data_dir / f"{self.series_name}_gpMTU.csv",
+            data_dir / f"{self.SNF_id}_gpMTU.csv",
             encoding="utf-8-sig",
             index_col=0,
         )
         self.data_Ci = pd.read_csv(
-            data_dir / f"{self.series_name}_CipMTU.csv",
+            data_dir / f"{self.SNF_id}_CipMTU.csv",
             encoding="utf-8-sig",
             index_col=0,
         )
@@ -59,16 +57,6 @@ class SNFProcessor:
             if lower <= span <= upper:
                 return lower, upper
         return years[-2], years[-1]  # fallback to 200–500
-
-    @staticmethod
-    def get_name_by_snf_id(df: pd.DataFrame, snf_id: str) -> str:
-        """
-        Return the Name corresponding to the given SNF_id.
-        If SNF_id is not found, returns None.
-        """
-        # Filter rows where SNF_id matches, then take the first Name
-        match = df.loc[df["SNF_id"] == snf_id, "Name"]
-        return match.iat[0] if not match.empty else "None"
 
     @staticmethod
     def interpolate(
@@ -196,15 +184,15 @@ class SNFProcessor:
         # Prepare output directory
         output_dir = create_output_dir(parent_folder_name="Results_Single")
 
-        self.write_excel(st, act, conc, output_dir, self.series_name)
+        self.write_excel(st, act, conc, output_dir, self.SNF_id)
 
-        print(f"\nResults for {self.series_name} at year {self.year}:")
+        print(f"\nResults for {self.SNF_id} at year {self.year}:")
         print(f"Elapsed: {time.time() - start:.2f}s")
 
         # interactive plotting
         plot_Gram_Ci(
             self.data_conc,
-            self.series_name,
+            self.SNF_id,
             f"Weight",
             "Concentration(g)",
             self.df_STDH_filtered,
@@ -212,7 +200,7 @@ class SNFProcessor:
         )
         plot_Gram_Ci(
             self.data_Ci,
-            self.series_name,
+            self.SNF_id,
             f"Activity",
             "Activity(Ci)",
             self.df_STDH_filtered,
