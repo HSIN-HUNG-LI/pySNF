@@ -120,7 +120,7 @@ def write_excel(
 def set_SNFdetail_info(option: int = 1) -> list:
     if option == 1:
         return [
-            "SNF_id",
+            "SNF_ID",
             "Type",
             "MTU",
             "Length",
@@ -155,7 +155,7 @@ def set_SNFdetail_info(option: int = 1) -> list:
 def get_SNFdetail_TableUnit(option: int = 1) -> list:
     if option == 1:
         return [
-            "SNF_id",
+            "SNF_ID",
             "Type",
             "MTU",
             "Length (cm)",
