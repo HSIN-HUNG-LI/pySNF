@@ -8,7 +8,6 @@ import numpy as np
 from typing import Literal
 from pathlib import Path
 
-
 from base import PredictSNFs_interpolate
 from FrameViewer.BaseFrame import DataFrameViewer
 from io_file import (
@@ -218,7 +217,7 @@ class PredictionFrame(tk.Frame):
             "Enrich": self.enrich_entry,
             "SP": self.sp_entry,
             "Burnup": self.burnup_entry,
-            "Cool": self.year_entry,  # cooling time
+            "Cool": self.year_entry,
         }
         data: dict[str, float] = {}
         for name, widget in fields.items():
@@ -332,11 +331,8 @@ class PredictionFrame(tk.Frame):
 
         # Build DataFrame and format every numeric cell in scientific notation
         df_preds = pd.DataFrame(series_list)
-        # Update the treeview
         df_display = pd.DataFrame([ser.map(self._format) for ser in series_list[:100]])
-        # Insert a 1-based serial column "S/n" at position 0
         df_display.insert(0, "S/n", range(1, len(df_display) + 1))
-        # Update the treeview with the numbered rows
         self._clear_viewers()
         self._insert_rows(self.STDH_viewer, df_display)
 
