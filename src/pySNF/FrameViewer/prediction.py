@@ -14,6 +14,8 @@ from io_file import (
     load_dataset,
     save_PredData,
     get_grid_ParqFile_path,
+    get_stdh_path,
+    create_output_dir,
 )
 
 
@@ -272,15 +274,6 @@ class PredictionFrame(tk.Frame):
             # Background computation
             threading.Thread(target=self.run_prediction, args=(), daemon=True).start()
 
-    @staticmethod
-    def run_experiment_GridResolution():
-        """
-        Start the prediction process in varying grid resolutions.
-        This method is called by Notebook to run the experiment.
-        """
-        # Start the prediction in a background thread
-        threading.Thread(target=PredictionFrame.run_prediction, daemon=True).start()
-
     def run_prediction(self) -> None:
         """
         Perform per-row interpolation, update the UI,
@@ -288,19 +281,15 @@ class PredictionFrame(tk.Frame):
         """
         # Pre-bind for speed & clarity
         grid_data = self.grid_data
-
-        # ============ Start Exp ============
-        cross_times = 2
+        cross_times = 1
         enrich_step = 0.5 * cross_times
         sp_step = 5 * cross_times
         burnup_step = 3000 * cross_times
         cool_step = cross_times
-        # ============ End Exp ============
 
         enrich_space = np.arange(1.5, 6.1, enrich_step)
         sp_space = np.arange(5, 46, sp_step)
         burnup_space = np.arange(5000, 74100, burnup_step)
-        # cool_space = np.logspace(-5.75, 6.215, cool_step, base=math.e)
         cool_space = np.logspace(-5.75, 6.215, 150, base=math.e)
         cool_space = cool_space[1::cool_step]
         out_cols = [f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")]
@@ -345,3 +334,65 @@ class PredictionFrame(tk.Frame):
                 axis=1,
             )
             save_PredData(df_out)
+
+    @staticmethod
+    def run_experiment_GridResolution(
+        enrich_factor: float = 1.0,
+        sp_factor: float = 1.0,
+        bp_factor: float = 1.0,
+        cool_factor: float = 1.0,
+        Exp_FolderName: str = '1111'
+    ):
+        """
+        Start the prediction process in varying grid resolutions.
+        This method is called by Notebook to run the experiment.
+        """
+        grid_data = pd.read_parquet(get_grid_ParqFile_path())
+        # ============ Start Exp ============
+        enrich_step = 0.5 * enrich_factor
+        sp_step = 5 * sp_factor
+        burnup_step = 3000 * bp_factor
+        cool_step = cool_factor
+        # ============ End Exp ============
+
+        enrich_space = np.arange(1.5, 6.1, enrich_step)
+        sp_space = np.arange(5, 46, sp_step)
+        burnup_space = np.arange(5000, 74100, burnup_step)
+        # cool_space = np.logspace(-5.75, 6.215, cool_step, base=math.e)
+        cool_space = np.logspace(-5.75, 6.215, 150, base=math.e)
+        cool_space = cool_space[1::cool_step]
+        out_cols = [f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")]
+        series_list: list[pd.Series] = []
+
+        # Load dataframe
+        df_in = load_dataset(get_stdh_path())
+
+        df_in_copy = df_in.copy().head(50)
+        desired_cols = ["Enrich", "SP", "Burnup", "Cool"]
+        df_in_copy = df_in_copy.loc[:, desired_cols].copy()
+
+        PredAssy = PredictSNFs_interpolate(
+            grid_data,
+            enrich_space,
+            sp_space,
+            burnup_space,
+            cool_space,
+            out_cols,
+        )
+        for i, (_, row) in enumerate(df_in_copy.iterrows()):
+            series_list.append(
+                PredAssy.interpolate(
+                    row["Enrich"],
+                    row["Burnup"],
+                    row["SP"],
+                    row["Cool"],
+                )
+            )
+
+        df_preds = pd.DataFrame(series_list)
+        df_out = pd.concat(
+            [df_in.reset_index(drop=True), df_preds.reset_index(drop=True)],
+            axis=1,
+        )
+        output_folder = create_output_dir(f"Exp_Prediction_{Exp_FolderName}")
+        df_out.to_csv(output_folder / "Prediction.csv", index=False)
