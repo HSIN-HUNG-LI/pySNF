@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
-from itertools import product
 from utils import plot_Gram_Ci, Converter_MTU2ASSY
 from io_file import create_output_dir, get_snfs_dir_path, get_stdh_path
 
