@@ -214,3 +214,13 @@ def summarize_error_stats_save(
 
     # 6. Write to Excel
     stats.to_excel(output_path)
+
+if __name__ == "__main__":
+    # Instantiate and run
+    experiment = GridResolutionExperiment() # init read grid database and all_snf
+    ls_factor = ["1812", "1412"]
+    for _factor in ls_factor:
+        experiment.run(
+            exp_folder_name=_factor
+        )
+# 
