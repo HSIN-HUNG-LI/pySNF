@@ -45,20 +45,15 @@ class GridResolutionExperiment:
         sp_factor = int(exp_folder_name[1])
         bp_factor = int(exp_folder_name[2])
         cool_factor = int(exp_folder_name[3])
-        # ============ Start Exp ============
-        enrich_step = 0.5 * enrich_factor
-        sp_step = 5 * sp_factor
-        burnup_step = 3000 * bp_factor
-        cool_step = cool_factor
-        # ============ End Exp ============
-        print(f'enrich_step: {enrich_step}, sp_step: {sp_step}, burnup_step: {burnup_step}, cool_step: {cool_step}')
 
-        enrich_space = np.arange(1.5, 6.1, enrich_step)
-        sp_space = np.arange(5, 46, sp_step)
-        burnup_space = np.arange(5000, 74100, burnup_step)
-        # cool_space = np.logspace(-5.75, 6.215, cool_step, base=math.e)
-        cool_space = np.logspace(-5.75, 6.215, 150, base=math.e)
-        cool_space = cool_space[1::cool_step]
+        enrich_space = np.arange(1.5, 6.1, 0.5)
+        enrich_space = enrich_space[0::enrich_factor]  
+        sp_space = np.arange(5, 46, 5)
+        sp_space = sp_space[0::sp_factor]  
+        burnup_space = np.arange(5000, 74100, 3000)
+        burnup_space = burnup_space[0::bp_factor]  
+        cool_space_raw = np.logspace(-5.75, 6.215, 150, base=math.e)
+        cool_space = cool_space_raw[1::cool_factor]
         print(f"enrich_space:{len(enrich_space)}, sp_space:{len(sp_space)}, burnup_space:{len(burnup_space)}, cool_space:{len(cool_space)}")
         out_cols = [f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")]
         series_list: list[pd.Series] = []
