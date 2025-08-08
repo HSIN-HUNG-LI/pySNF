@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import  filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 import pandas as pd
 import re
 from base import SNFProcessor
@@ -81,12 +81,12 @@ class MultipleSearchFrame(tk.Frame):
             result_frame, empty_df, title="Source term & Decay Heat"
         )
         self.STDH_df_viewer.pack(fill=tk.BOTH, expand=True)
-        
+
         # Configure alternating row styles for readability
         style = ttk.Style()
         style.configure("Treeview", rowheight=24)  # optionally adjust row height
         self.STDH_df_viewer.tree.tag_configure("evenrow", background="#ffffff")
-        self.STDH_df_viewer.tree.tag_configure("oddrow",  background="#f0f0f0")
+        self.STDH_df_viewer.tree.tag_configure("oddrow", background="#f0f0f0")
         self.STDH_df_viewer.tree.tag_configure("summary", foreground="red")
 
         # Initialize log
