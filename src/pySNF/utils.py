@@ -192,4 +192,3 @@ def Converter_MTU2ASSY(values, series_info):
 
     # Handle scalar or pandas Series
     return values * mtu_per_assy
-
