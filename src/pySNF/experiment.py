@@ -47,14 +47,16 @@ class GridResolutionExperiment:
         cool_factor = int(exp_folder_name[3])
 
         enrich_space = np.arange(1.5, 6.1, 0.5)
-        enrich_space = enrich_space[0::enrich_factor]  
+        enrich_space = enrich_space[0::enrich_factor]
         sp_space = np.arange(5, 46, 5)
-        sp_space = sp_space[0::sp_factor]  
+        sp_space = sp_space[0::sp_factor]
         burnup_space = np.arange(5000, 74100, 3000)
-        burnup_space = burnup_space[0::bp_factor]  
+        burnup_space = burnup_space[0::bp_factor]
         cool_space_raw = np.logspace(-5.75, 6.215, 150, base=math.e)
         cool_space = cool_space_raw[1::cool_factor]
-        print(f"enrich_space:{len(enrich_space)}, sp_space:{len(sp_space)}, burnup_space:{len(burnup_space)}, cool_space:{len(cool_space)}")
+        print(
+            f"enrich_space:{len(enrich_space)}, sp_space:{len(sp_space)}, burnup_space:{len(burnup_space)}, cool_space:{len(cool_space)}"
+        )
         out_cols = [f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")]
         series_list: list[pd.Series] = []
 
@@ -96,9 +98,7 @@ class GridResolutionExperiment:
         df_out.to_csv(output_folder / f"Prediction_{exp_folder_name}.csv", index=False)
         df = compute_relative_errors(df_out, self.error_metrics)
         # Plot the combined boxplots and get the melted DataFrame
-        title_boxplot = (
-            f"Relative Error across Source term and Decay heat \n (Grid Resolutions: En:{exp_folder_name[0]}, SP:{exp_folder_name[1]}, Bp:{exp_folder_name[2]}, Ct:{exp_folder_name[3]})"
-        )
+        title_boxplot = f"Relative Error across Source term and Decay heat \n (Grid Resolutions: En:{exp_folder_name[0]}, SP:{exp_folder_name[1]}, Bp:{exp_folder_name[2]}, Ct:{exp_folder_name[3]})"
         plot_results = output_folder / f"error_summary_{exp_folder_name}.png"
         df_long = plot_one_error_boxplots(
             df, self.error_metrics, title_boxplot, plot_results
@@ -215,12 +215,11 @@ def summarize_error_stats_save(
     # 6. Write to Excel
     stats.to_excel(output_path)
 
+
 if __name__ == "__main__":
     # Instantiate and run
-    experiment = GridResolutionExperiment() # init read grid database and all_snf
+    experiment = GridResolutionExperiment()  # init read grid database and all_snf
     ls_factor = ["1812", "1412"]
     for _factor in ls_factor:
-        experiment.run(
-            exp_folder_name=_factor
-        )
-# 
+        experiment.run(exp_folder_name=_factor)
+#
