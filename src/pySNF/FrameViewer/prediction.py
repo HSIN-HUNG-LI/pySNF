@@ -18,6 +18,7 @@ from io_file import (
     create_output_dir,
 )
 
+
 class PredictionFrame(tk.Frame):
     """
     Frame to load a dataset of SNFs, compute aggregate STDH, mass, and activity,
@@ -340,7 +341,7 @@ class PredictionFrame(tk.Frame):
         sp_factor: float = 1.0,
         bp_factor: float = 1.0,
         cool_factor: float = 1.0,
-        Exp_FolderName: str = '1111'
+        Exp_FolderName: str = "1111",
     ):
         """
         Start the prediction process in varying grid resolutions.
