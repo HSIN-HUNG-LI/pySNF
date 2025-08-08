@@ -7,6 +7,7 @@ from FrameViewer.all_snfs import AllSNFsFrame
 from FrameViewer.prediction import PredictionFrame
 from io_file import load_dataset, get_stdh_path
 
+
 class SearchApp(tk.Tk):
     """Main window for SNFs Dataset Search App."""
 
@@ -22,7 +23,14 @@ class SearchApp(tk.Tk):
         self.df = load_dataset(self.df_path)
 
         # Define available modes
-        modes = ["Introduction", "Single SNF", "Compare SNFs", "Multiple SNFs", "All SNFs", "Prediction"]
+        modes = [
+            "Introduction",
+            "Single SNF",
+            "Compare SNFs",
+            "Multiple SNFs",
+            "All SNFs",
+            "Prediction",
+        ]
         self.mode_var = tk.StringVar(value=modes[5])
 
         # Mode selection dropdown
