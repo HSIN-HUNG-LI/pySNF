@@ -316,7 +316,7 @@ class PredictSNFs_interpolate:
 
         # Extract the 16 corner values
         corner = self._get_reduced_grid()
-        
+
         # Precompute all axis bounds
         e0, e1 = self._find_bounds(self.enrichment, self.enrichment_space)
         sp0, sp1 = self._find_bounds(self.specific_power, self.specific_power_space)
