@@ -214,9 +214,9 @@ class AllSNFsFrame(tk.Frame):
     def load_list(self):
         """Load SNF names from a text/CSV file into the selection list."""
 
-        self.df_path = Path(filedialog.askopenfilename(
-            filetypes=[("Text & CSV", "*.txt *.csv")]
-        ))
+        self.df_path = Path(
+            filedialog.askopenfilename(filetypes=[("Text & CSV", "*.txt *.csv")])
+        )
         if not self.df_path:
             messagebox.showerror("Error", "No valid Path.")
             return
