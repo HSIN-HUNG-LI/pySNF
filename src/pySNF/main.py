@@ -7,10 +7,8 @@ from FrameViewer.all_snfs import AllSNFsFrame
 from FrameViewer.prediction import PredictionFrame
 from io_file import load_dataset, get_stdh_path
 
-
 class SearchApp(tk.Tk):
-    """Main window for SNFs Dataset Search App."""
-
+    """Main window for SNFs Dataset Explorer App."""
     def __init__(self):
         super().__init__()
         self.title(
