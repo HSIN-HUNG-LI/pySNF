@@ -102,7 +102,7 @@ class PredictionFrame(tk.Frame):
         )
 
         # Text log
-        self.multi_text = tk.Text(self.inner, height=4, wrap=tk.WORD)
+        self.multi_text = tk.Text(self.inner, height=6, wrap=tk.WORD)
         self.multi_text.pack(fill=tk.X, padx=10)
 
         # Data viewers
@@ -123,7 +123,32 @@ class PredictionFrame(tk.Frame):
         tk.Button(row2, text="Load and Output", command=self.load_list).pack(
             side=tk.LEFT
         )
-
+        row3 = tk.Frame(self.inner)
+        row3.pack(fill=tk.X, padx=10, pady=10)
+        tk.Label(row3, text="Verification:").pack(side=tk.LEFT)
+        entry = tk.Entry(row3, width=40)
+        entry.insert(0, f"Use right button to load file and Output")
+        entry.config(state="disabled")
+        entry.pack(side=tk.LEFT, padx=5)
+        tk.Button(row3, text="Output", command=self.verification).pack(
+            side=tk.LEFT
+        )
+        # Text log
+        self.multi_text2 = tk.Text(self.inner, height=5, wrap=tk.WORD)
+        self.multi_text2.pack(fill=tk.X, padx=10)
+        self.multi_text2.delete("1.0", tk.END)
+        self.multi_text2.insert(
+            "1.0",
+            (
+                "Verify model predictions for Source Term and Decay Heat (ST&DH).\n"
+                "This routine exports three diagnostic PNG figures (saved to the output directory):\n"
+                "  1) Reference dataset distribution — 'SNFs_dataset.png'\n"
+                "  2) Prediction distribution — 'SNFs_prediction.png'\n"
+                "  3) Relative error distribution (prediction vs. reference) — 'SNFs_comparison.png'\n"
+                "\n"
+                "Use these plots to quickly assess data coverage, model behavior, and error characteristics.\n"
+            )
+        )
     def _make_viewer(
         self,
         parent,
@@ -156,8 +181,17 @@ class PredictionFrame(tk.Frame):
         self.multi_text.delete("1.0", tk.END)
         self.multi_text.insert(
             "1.0",
-            "Two ways to predict source term and decay heat (ST&DH)\n First: Read dataset (Contain [Enrich, SP, Burnup, Cool] column ) "
-            "or use file in [TEST_prediction] folder to compute ST&DH \n Second: Enter information above and click output \n (Only display first 100 row)",
+            (
+                "Source Term & Decay Heat (ST&DH) — Prediction Modes\n"
+                "Choose one of the following:\n"
+                "  1) Load dataset: provide a table with columns [Enrich, SP, Burnup, Cool],\n"
+                "     or select a file from the 'TEST_prediction' folder to compute ST&DH.\n"
+                "  2) Manual input: enter the parameters above and click 'Output'.\n"
+                "\n"
+                "Notes:\n"
+                "  • Only the first 100 rows are shown in the preview.\n"
+                "  • Results are saved to the output directory.\n"
+            )
         )
 
     def _log_file_message(self):
@@ -249,6 +283,12 @@ class PredictionFrame(tk.Frame):
 
         self.df_in = df_in
         self.run_prediction()
+    def verification(self):
+        """
+        Placeholder for verification logic.
+        Currently does nothing but can be extended to handle verification tasks.
+        """
+        messagebox.showinfo("Info", "Verification functionality not implemented yet.")
 
     def load_list(self):
         """Load SNF names from a text/CSV file into the selection list."""
