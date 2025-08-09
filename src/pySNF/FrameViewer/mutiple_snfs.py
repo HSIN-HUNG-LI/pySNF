@@ -25,7 +25,7 @@ class MultipleSearchFrame(tk.Frame):
 
         # --- Column definitions shared across methods ---
         self.cols = [
-            "SNF_id",
+            "SNF_ID",
             "DH(Watts/assy.)",
             "FN(n/s/assy.)",
             "FG(r/s/assy.)",
@@ -37,7 +37,7 @@ class MultipleSearchFrame(tk.Frame):
         input_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # --- SNF_id entry and action buttons ---
-        tk.Label(input_frame, text="SNFs id:").pack(side=tk.LEFT)
+        tk.Label(input_frame, text="SNFs ID:").pack(side=tk.LEFT)
         self.name_entry = tk.Entry(input_frame, width=20)
         self.name_entry.insert(0, "1C2505")  # Default SNF name
         self.name_entry.pack(side=tk.LEFT, padx=5)
