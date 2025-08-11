@@ -290,9 +290,19 @@ class PredictionFrame(tk.Frame):
         Currently does nothing but can be extended to handle verification tasks.
         """
         output_pred = create_output_dir("Prediction/verification")
+
+        # Dataset plots
+        plot_title_dataset = "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
         output_fig = output_pred / "SNFs_dataset.png"
-        plot_4x4_scatterplot(output_fig, get_stdh_path())
-        # messagebox.showinfo("Info", "Verification functionality not implemented yet.")
+        y_vars = ["DH_0y", "FN_0y", "HG_0y", "FG_0y"]
+        plot_4x4_scatterplot(output_fig, get_stdh_path(), y_vars, plot_title_dataset)
+
+        # Prediction plots
+        plot_title_pred = "[Prediction] Targets vs. Fuel Parameters — Colored by Type"
+        output_fig_pred = output_pred / "SNFs_prediction.png"
+        y_vars_pred = ["DH_prediction", "FN_prediction", "HG_prediction", "FG_prediction"]
+        plot_4x4_scatterplot(output_fig_pred, get_stdh_path(), y_vars_pred, plot_title_pred)
+
 
     def load_list(self):
         """Load SNF names from a text/CSV file into the selection list."""
