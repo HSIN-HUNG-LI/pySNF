@@ -234,7 +234,7 @@ def plot_stdh_RelativeError_boxplots(
 
     # 4. Tidy up labels and fonts
     plt.xlabel("")  # no x-axis label
-    plt.ylabel("Interpolation / TRITON Relative Error", fontsize=fontsize_all + 2)
+    # plt.ylabel("Interpolation / TRITON Relative Error", fontsize=fontsize_all + 2)
     plt.xticks(fontsize=fontsize_all)
     y_ticks = np.arange(0.4, 1.6 + 1e-8, 0.1)
     plt.yticks(y_ticks, fontsize=fontsize_all)
