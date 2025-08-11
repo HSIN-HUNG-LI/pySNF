@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import matplotlib.ticker as mticker
 
-def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
+
+def plot_4x4_scatterplot(
+    output_path: Path, CSV_PATH: Path, y_vars: list[str], plot_title: str
+) -> None:
     """
     4×4 scatterplot matrix with:
     - Centralized, easily adjustable font sizes (larger defaults).
@@ -18,7 +21,7 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
         axis ∈ {"x","y"}.
         """
         major = mticker.LogLocator(base=10.0)  # decades only
-        fmt   = mticker.LogFormatterMathtext(base=10.0, labelOnlyBase=True)
+        fmt = mticker.LogFormatterMathtext(base=10.0, labelOnlyBase=True)
 
         if axis == "x":
             ax.xaxis.set_major_locator(major)
@@ -31,30 +34,26 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
             ax.yaxis.set_minor_locator(mticker.NullLocator())
             ax.yaxis.set_minor_formatter(mticker.NullFormatter())
 
-
     # -----------------------------
     # Configurable parameters
     # -----------------------------
-    project_root = Path.cwd().resolve().parents[1] 
-    CSV_PATH = project_root  / "data" / "DataBase_SNFs" / "all_stdh_dataset.csv"
+
     x_vars = ["Enrich", "SP", "Burnup", "Cool"]
-    y_vars = ["DH_0y", "FN_0y", "HG_0y", "FG_0y"]
 
     # Central font-size config (increase/decrease here)
     FS = {
-        "title": 40,       # figure suptitle
+        "title": 40,  # figure suptitle
         "axis_label": 28,  # x/y axis labels
-        "tick": 24,        # tick labels
-        "legend": 28,      # legend text
+        "tick": 24,  # tick labels
+        "legend": 28,  # legend text
     }
     # Map Y variable names to display labels (strip "_0y")
-    Y_LABEL_MAP = {
-        "DH_0y": "DH",
-        "FN_0y": "FN",
-        "HG_0y": "HG",
-        "FG_0y": "FG",
-    }
-
+    Y_LABEL_MAP: dict[str, str] = {}
+    for y in y_vars:
+        # Remove the last 3 chars only if the suffix is exactly "_0y"
+        label = y[:2] if y.endswith("_0y") or y.endswith("_prediction") else y
+        Y_LABEL_MAP[y] = label
+    print(Y_LABEL_MAP)  # Debug: print the Y label map
     X_LABEL_MAP = {
         "Enrich": "Enrichment (%U235)",
         "SP": "Specific Power (MW)",
@@ -62,19 +61,17 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
         "Cool": "Cooling time (Year)",
     }
 
-    MARKER_SIZE = 16      # scatter marker size
-    ALPHA = 0.7           # point transparency
+    MARKER_SIZE = 16  # scatter marker size
+    ALPHA = 0.7  # point transparency
 
     # Per-subplot scale control:
     # Key = (y_var, x_var), Value = (xscale, yscale) where each is "linear" or "log".
     # Defaults to linear; override any cell you want.
     SCALES = {(y, x): ("linear", "linear") for y in y_vars for x in x_vars}
-
+    for y in y_vars:
+        SCALES[(y, "Cool")] = ("log", "log")
     # --- EXAMPLES (uncomment/modify as needed) ---
-    SCALES[("HG_0y", "Cool")] = ("log", "log")
-    SCALES[("FG_0y", "Cool")] = ("log", "log")
-    SCALES[("FN_0y", "Cool")] = ("log", "log")
-    SCALES[("DH_0y", "Cool")] = ("log", "log")
+    # SCALES[("HG_0y", "Cool")] = ("log", "log")
     # SCALES[("FG_0y", "Burnup")] = ("linear", "log")
     # SCALES[("FN_0y", "SP")] = ("linear", "linear")
 
@@ -105,11 +102,7 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
     n_rows, n_cols = len(y_vars), len(x_vars)
 
     # No sharex/sharey so tick_params are independent per axis
-    fig, axes = plt.subplots(
-        n_rows, n_cols,
-        figsize=(20, 18),
-        constrained_layout=False
-    )
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, 18), constrained_layout=False)
 
     for i, y in enumerate(y_vars):
         for j, x in enumerate(x_vars):
@@ -117,12 +110,16 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
 
             sns.scatterplot(
                 data=df,
-                x=x, y=y,
+                x=x,
+                y=y,
                 hue="Type",
                 hue_order=type_order,
                 palette=type_to_color,
-                s=MARKER_SIZE, alpha=ALPHA, linewidth=0,
-                legend=False, ax=ax,
+                s=MARKER_SIZE,
+                alpha=ALPHA,
+                linewidth=0,
+                legend=False,
+                ax=ax,
             )
 
             # Per-subplot axis scales
@@ -141,9 +138,8 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
             # Independent tick styling per subplot
             ax.tick_params(axis="both", which="both", labelsize=FS["tick"])
 
-
             # Shared labels: only left column + bottom row show axis labels
-            y_label = Y_LABEL_MAP.get(y, y.replace("_0y", ""))  # fallback: generic strip
+            y_label = Y_LABEL_MAP.get(y, y)  # fallback: generic strip
             ax.set_ylabel(y_label if j == 0 else "", fontsize=FS["axis_label"])
             x_label = X_LABEL_MAP.get(x, x)  # fallback to original if not mapped
             ax.set_xlabel(x_label if i == n_rows - 1 else "", fontsize=FS["axis_label"])
@@ -153,16 +149,23 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
 
     # Figure title (keep slightly high to make room for legend below it)
     fig.suptitle(
-        "Targets vs. Fuel Parameters — Colored by Type",
+        f"{plot_title}",
         fontsize=FS["title"],
-        y=0.94  # a bit higher; tweak 0.978–0.986 if needed
+        y=0.94,  # a bit higher; tweak 0.978–0.986 if needed
     )
 
     n_types = len(type_order)
     handles = [
-        Line2D([0], [0], marker="o", linestyle="", markersize=6,
-            markerfacecolor=type_to_color[t], markeredgecolor=type_to_color[t],
-            label=t)
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            linestyle="",
+            markersize=6,
+            markerfacecolor=type_to_color[t],
+            markeredgecolor=type_to_color[t],
+            label=t,
+        )
         for t in type_order
     ]
     ncol = min(n_types, 5)
@@ -170,14 +173,17 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
     leg = fig.legend(
         handles=handles,
         loc="upper center",
-        bbox_to_anchor=(0.5, 0.9),  # closer to the title (raise this to get even tighter)
+        bbox_to_anchor=(
+            0.5,
+            0.9,
+        ),  # closer to the title (raise this to get even tighter)
         ncol=ncol,
         frameon=True,
         borderaxespad=0.1,  # shrink space between legend and figure
-        borderpad=0.3,      # shrink padding inside the legend frame
+        borderpad=0.3,  # shrink padding inside the legend frame
         handletextpad=0.4,
         columnspacing=0.8,
-        labelspacing=0.3
+        labelspacing=0.3,
     )
     plt.setp(leg.get_texts(), fontsize=FS["legend"])
     plt.setp(leg.get_title(), fontsize=FS["legend"])
@@ -189,5 +195,3 @@ def plot_4x4_scatterplot(output_path: Path, CSV_PATH: Path) -> None:
     fig.savefig(output_path, dpi=300)
     # plt.show()
     # print(f"Saved figure to: {output_path.resolve()}")
-
-
