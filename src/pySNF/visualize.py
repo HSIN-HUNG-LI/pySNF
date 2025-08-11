@@ -1,13 +1,14 @@
 from pathlib import Path
 import pandas as pd
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import matplotlib.ticker as mticker
-
+from typing import Optional
 
 def plot_4x4_scatterplot(
-    output_path: Path, CSV_PATH: Path, y_vars: list[str], plot_title: str
+    output_path: Path, df: pd.DataFrame, y_vars: list[str], plot_title: str
 ) -> None:
     """
     4×4 scatterplot matrix with:
@@ -53,7 +54,7 @@ def plot_4x4_scatterplot(
         # Remove the last 3 chars only if the suffix is exactly "_0y"
         label = y[:2] if y.endswith("_0y") or y.endswith("_prediction") else y
         Y_LABEL_MAP[y] = label
-    print(Y_LABEL_MAP)  # Debug: print the Y label map
+
     X_LABEL_MAP = {
         "Enrich": "Enrichment (%U235)",
         "SP": "Specific Power (MW)",
@@ -81,7 +82,7 @@ def plot_4x4_scatterplot(
     # Load & prepare data
     # -----------------------------
     use_cols = x_vars + y_vars + ["Type"]
-    df = pd.read_csv(CSV_PATH, usecols=use_cols)
+    # df = pd.read_csv(CSV_PATH, usecols=use_cols)
 
     # Enforce numeric dtypes and category for 'Type'
     for c in x_vars + y_vars:
@@ -195,3 +196,56 @@ def plot_4x4_scatterplot(
     fig.savefig(output_path, dpi=300)
     # plt.show()
     # print(f"Saved figure to: {output_path.resolve()}")
+
+
+def compute_relative_errors(df: pd.DataFrame, ERROR_METRICS: list) -> pd.DataFrame:
+    """
+    For each metric in ERROR_METRICS, compute (grid / triton)
+    and store it in a new column 'error_<metric>'.
+    """
+    for metric, triton_col, grid_col in ERROR_METRICS:
+        df[f"error_{metric}"] = df[grid_col].div(df[triton_col])
+    return df
+
+def plot_stdh_RelativeError_boxplots(
+    df: pd.DataFrame,
+    ERROR_METRICS: list,
+    title_boxplot: str,
+    save_path: Optional[Path] = None,
+) -> pd.DataFrame:
+    """
+    Create a single figure with four boxplots—one for each error metric—
+    combining all samples (no grouping by Type).
+    """
+    df_error_matrix = compute_relative_errors(df, ERROR_METRICS)
+
+    # 1. Build a list of the four error column names
+    stdh_METRICS = ["DH", "FN", "HG", "FG"]
+    error_cols = [f"error_{metric}" for metric in stdh_METRICS]
+
+    # 2. Melt the DataFrame into long form: columns = ['Metric', 'Error']
+    df_long = df_error_matrix[error_cols].melt(var_name="Metric", value_name="Error")
+    fontsize_all = 14
+
+    # 3. Draw a single row of boxplots
+    plt.figure(figsize=(8, 6), dpi=600)
+    plt.suptitle(f"{title_boxplot}", fontsize=fontsize_all + 2)
+    sns.boxplot(data=df_long, x="Metric", y="Error")
+
+    # 4. Tidy up labels and fonts
+    plt.xlabel("")  # no x-axis label
+    plt.ylabel("Interpolation / TRITON Relative Error", fontsize=fontsize_all + 2)
+    plt.xticks(fontsize=fontsize_all)
+    y_ticks = np.arange(0.4, 1.6 + 1e-8, 0.1)
+    plt.yticks(y_ticks, fontsize=fontsize_all)
+    plt.axhline(1.0, color="red", linestyle="--", linewidth=1.5, label="y = 1")
+
+    # 5. Tight layout so nothing overlaps
+    plt.tight_layout()
+    # Save if requested
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight", dpi=300)
+    # plt.show()
+
+    # Return the long-form DataFrame for post-plot analysis
+    return df_long
