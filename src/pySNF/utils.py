@@ -3,7 +3,6 @@ import seaborn as sns
 import os
 import glob
 import pandas as pd
-import numpy as np
 from pathlib import Path
 from typing import Union, cast, Optional
 
