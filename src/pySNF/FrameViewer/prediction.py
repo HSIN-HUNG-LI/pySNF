@@ -10,6 +10,7 @@ from pathlib import Path
 
 from base import PredictSNFs_interpolate
 from FrameViewer.BaseFrame import DataFrameViewer
+from visualize import plot_4x4_scatterplot
 from io_file import (
     load_dataset,
     save_PredData,
@@ -130,7 +131,7 @@ class PredictionFrame(tk.Frame):
         entry.insert(0, f"Use right button to load file and Output")
         entry.config(state="disabled")
         entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(row3, text="Output", command=self.verification).pack(
+        tk.Button(row3, text="Output", command=self._verification).pack(
             side=tk.LEFT
         )
         # Text log
@@ -283,12 +284,15 @@ class PredictionFrame(tk.Frame):
 
         self.df_in = df_in
         self.run_prediction()
-    def verification(self):
+    def _verification(self):
         """
         Placeholder for verification logic.
         Currently does nothing but can be extended to handle verification tasks.
         """
-        messagebox.showinfo("Info", "Verification functionality not implemented yet.")
+        output_pred = create_output_dir("Prediction/verification")
+        output_fig = output_pred / "SNFs_dataset.png"
+        plot_4x4_scatterplot(output_fig, get_stdh_path())
+        # messagebox.showinfo("Info", "Verification functionality not implemented yet.")
 
     def load_list(self):
         """Load SNF names from a text/CSV file into the selection list."""
@@ -304,10 +308,6 @@ class PredictionFrame(tk.Frame):
             if self.df_in.empty:
                 messagebox.showerror("Error", "Dataset empty.")
                 return
-            # ================================================================
-            # self.df_in = self.df_in.iloc[969:975]
-            # self.df_in.columns = ["Enrich", "SP", "Burnup", "Cool"]
-            # ================================================================
             self.n_snfs = len(self.df_in)
             self._running = True
             self._show_running_dialog()
