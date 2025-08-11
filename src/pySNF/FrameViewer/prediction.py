@@ -10,7 +10,7 @@ from pathlib import Path
 
 from base import PredictSNFs_interpolate
 from FrameViewer.BaseFrame import DataFrameViewer
-from visualize import plot_4x4_scatterplot
+from visualize import plot_4x4_scatterplot, plot_stdh_RelativeError_boxplots
 from io_file import (
     load_dataset,
     save_PredData,
@@ -290,19 +290,29 @@ class PredictionFrame(tk.Frame):
         Currently does nothing but can be extended to handle verification tasks.
         """
         output_pred = create_output_dir("Prediction/verification")
+        df_stdh = pd.read_csv(get_stdh_path())
 
         # Dataset plots
         plot_title_dataset = "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
         output_fig = output_pred / "SNFs_dataset.png"
         y_vars = ["DH_0y", "FN_0y", "HG_0y", "FG_0y"]
-        plot_4x4_scatterplot(output_fig, get_stdh_path(), y_vars, plot_title_dataset)
+        plot_4x4_scatterplot(output_fig, df_stdh, y_vars, plot_title_dataset)
 
         # Prediction plots
         plot_title_pred = "[Prediction] Targets vs. Fuel Parameters — Colored by Type"
         output_fig_pred = output_pred / "SNFs_prediction.png"
         y_vars_pred = ["DH_prediction", "FN_prediction", "HG_prediction", "FG_prediction"]
-        plot_4x4_scatterplot(output_fig_pred, get_stdh_path(), y_vars_pred, plot_title_pred)
+        plot_4x4_scatterplot(output_fig_pred, df_stdh, y_vars_pred, plot_title_pred)
 
+        self.error_metrics_ColName = [
+            ("FN", "FN_0y", "FN_prediction"),
+            ("FG", "FG_0y", "FG_prediction"),
+            ("HG", "HG_0y", "HG_prediction"),
+            ("DH", "DH_0y", "DH_prediction"),
+        ]
+        title_boxplot = f"[Prediction / Dataset] Relative Error across Source term and Decay heat"
+        RelativeError_save_path = output_pred / "SNFs_comparsion.png"
+        plot_stdh_RelativeError_boxplots(df_stdh, self.error_metrics_ColName, title_boxplot, RelativeError_save_path)
 
     def load_list(self):
         """Load SNF names from a text/CSV file into the selection list."""
