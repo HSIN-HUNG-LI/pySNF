@@ -9,8 +9,8 @@ import pandas as pd
 from tkinter import messagebox
 
 # Keep existing logging behavior but also get a module logger for local use.
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+# logger = logging.getLogger(__name__)
 
 
 def get_stdh_path() -> Path:
@@ -96,12 +96,6 @@ def load_dataset(file_path: Path) -> pd.DataFrame:
             )
             return pd.DataFrame()
 
-        logging.info(
-            "Successfully read %s \n(%d rows, %d columns)",
-            file_path,
-            df.shape[0],
-            df.shape[1],
-        )
         return df
 
     except Exception as e:
@@ -121,7 +115,6 @@ def save_PredData(df: pd.DataFrame) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     filepath = output_dir / filename
     df.to_csv(filepath, index=False)
-    logger.info("Saved prediction CSV to %s", filepath)
 
 
 def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
@@ -141,7 +134,6 @@ def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     output_path = get_output_dir_path() / Path(parent_folder_name) / f"{timestamp}_output"
     output_path.mkdir(parents=True, exist_ok=True)
-    logger.info("Created output directory %s", output_path)
     return output_path
 
 
@@ -163,7 +155,6 @@ def write_excel(
         df_stdh.to_excel(writer, sheet_name="STDH", index=False)
         df_conc.to_excel(writer, sheet_name="Concentration", index=False)
         df_act.to_excel(writer, sheet_name="Activity", index=False)
-    logger.info("Wrote Excel workbook to %s", path)
 
 
 def set_SNFdetail_info(option: int = 1) -> List[str]:
