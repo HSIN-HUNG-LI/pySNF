@@ -25,7 +25,7 @@ class GridResolutionExperiment:
         # Load grid‐interpolation data and standard dataset
         self.grid_data = pd.read_parquet(get_grid_ParqFile_path())
         self.df_in = load_dataset(get_stdh_path())
-        self.df_in = self.df_in.copy().head(100)
+        # self.df_in = self.df_in.copy().head(100)
 
         # Define metrics: (label, Triton col, grid col, y‐axis limits)
         self.error_metrics = [
