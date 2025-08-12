@@ -6,13 +6,14 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import re
+import os
 
 from base import PredictSNFs_interpolate
 from io_file import (
     load_dataset,
     get_grid_ParqFile_path,
     get_stdh_path,
-    create_output_dir,
     get_output_dir_path,
 )
 
@@ -24,6 +25,7 @@ class GridResolutionExperiment:
         # Load grid‐interpolation data and standard dataset
         self.grid_data = pd.read_parquet(get_grid_ParqFile_path())
         self.df_in = load_dataset(get_stdh_path())
+        self.df_in = self.df_in.copy().head(100)
 
         # Define metrics: (label, Triton col, grid col, y‐axis limits)
         self.error_metrics = [
@@ -35,6 +37,7 @@ class GridResolutionExperiment:
 
     def run(
         self,
+        exp_parent_folder: str,
         exp_folder_name: str = "1111",
     ):
         """
@@ -91,7 +94,7 @@ class GridResolutionExperiment:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         output_folder = (
             get_output_dir_path()
-            / f"PredictEXP_Results"
+            / f"{exp_parent_folder}"
             / f"{timestamp}_output_{exp_folder_name}"
         )
         output_folder.mkdir(parents=True, exist_ok=True)
@@ -107,16 +110,113 @@ class GridResolutionExperiment:
         stats_output = output_folder / f"error_summary_stats_{exp_folder_name}.xlsx"
         summarize_error_stats_save(df_long, stats_output, self.error_metrics)
         print(f"Summary plot and statistics saved to: {output_folder}")
+        
 
+
+def plot_stdh_EachError_boxplots(exp_parent_folder: str = "PredictEXP_Results"):
+    # === User-configurable target column ===
+    all_target_col = ["FN", "FG", "HG", "DH"]  # e.g. "FN", "FG", "HG", "DH", etc.
+    project_root = Path.cwd().resolve().parents[2] 
+    BASE_DIR = project_root / "pySNF" / "output" / f"{exp_parent_folder}"
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_folder = (
+        get_output_dir_path()
+        / f"{exp_parent_folder}"
+        / f"Summary_above_{timestamp}_output"
+    )
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    # Regex to capture the 4-digit parameter at end of folder names
+    PARAM_RE = re.compile(r"_output_(\d{4})$")
+
+    for target_col in all_target_col:
+        box_stats = []
+        for entry in sorted(os.listdir(BASE_DIR)):
+            folder_path = os.path.join(BASE_DIR, entry)
+            if not os.path.isdir(folder_path):
+                continue
+
+            m = PARAM_RE.search(entry)
+            if not m:
+                continue
+            param = m.group(1)
+
+            excel_name = f"error_summary_stats_{param}.xlsx"
+            excel_path = os.path.join(folder_path, excel_name)
+            df = pd.read_excel(excel_path, index_col=0)
+
+            # Extract native Python floats via .item()
+            whisker_low  = df.at["min",   target_col].item()
+            q1           = df.at["25%",   target_col].item()
+            median       = df.at["50%",   target_col].item()
+            q3           = df.at["75%",   target_col].item()
+            whisker_high = df.at["max",   target_col].item()
+            mean         = df.at["mean",  target_col].item()
+
+            box_stats.append({
+                "label":   param,
+                "whislo":  whisker_low,
+                "q1":      q1,
+                "med":     median,
+                "q3":      q3,
+                "whishi":  whisker_high,
+                "mean":    mean,
+                "fliers":  []       
+            })
+        box_stats.sort(key=lambda d: d["mean"])
+        # Plotting
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.bxp(box_stats, showmeans=True)
+        ax.set_title(f"{target_col} Error Summary Across Experiment Parameters \nIn (En, SP, Bp, Ct)\n[scaled by original/x]", fontsize=14)
+        ax.set_xlabel("Experiment Parameter", fontsize=12)
+        ax.set_ylabel(f"{target_col} Error", fontsize=12)
+        ax.grid(True, linestyle="--", alpha=0.5)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+        plt.tight_layout()
+
+        # Save PNG
+        output_path = Path(BASE_DIR / output_folder / f"boxplots_{target_col}.png")
+        fig.savefig(output_path, dpi=300)
+        print(f"Saved boxplot figure to {output_path}")
 
 def compute_relative_errors(df: pd.DataFrame, ERROR_METRICS: list) -> pd.DataFrame:
     """
-    For each metric in ERROR_METRICS, compute (grid / triton)
-    and store it in a new column 'error_<metric>'.
+    For each metric in ERROR_METRICS, compute (grid / triton) into 'error_<metric>'.
+    Robust to duplicate index/columns and avoids alignment-driven reindex errors.
     """
+    df = df.copy()
+
+    # 0) Ensure a unique, monotonically increasing index
+    if not df.index.is_unique:
+        df.reset_index(drop=True, inplace=True)
+
+    # 1) If any duplicate column names exist, keep the last occurrence
+    #    (alternatively, raise with a clear error if you prefer strictness)
+    if df.columns.duplicated().any():
+        df = df.loc[:, ~df.columns.duplicated(keep="last")]
+
+    # 2) Compute ratios using NumPy to bypass alignment logic
     for metric, triton_col, grid_col, _ in ERROR_METRICS:
-        df[f"error_{metric}"] = df[grid_col].div(df[triton_col])
+        if grid_col not in df.columns:
+            raise KeyError(f"Missing grid column: {grid_col}")
+        if triton_col not in df.columns:
+            raise KeyError(f"Missing TRITON column: {triton_col}")
+
+        grid_vals = df[grid_col].to_numpy(dtype="float64")
+        tri_vals  = df[triton_col].to_numpy(dtype="float64")
+
+        # Safe division: set to NaN where denominator is zero
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratio = np.divide(
+                grid_vals, tri_vals,
+                out=np.full_like(grid_vals, np.nan, dtype="float64"),
+                where=tri_vals != 0,
+            )
+
+        df[f"error_{metric}"] = ratio
+
     return df
+
 
 
 def plot_error_boxplots(df: pd.DataFrame, ERROR_METRICS) -> None:
@@ -219,7 +319,11 @@ def summarize_error_stats_save(
 if __name__ == "__main__":
     # Instantiate and run
     experiment = GridResolutionExperiment()  # init read grid database and all_snf
-    ls_factor = ["1812", "1412"]
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    exp_parent_folder = f'PredictEXP_Results_{timestamp}'
+    ls_factor = ["1111", "1412"]
     for _factor in ls_factor:
-        experiment.run(exp_folder_name=_factor)
-#
+        experiment.run(exp_parent_folder, exp_folder_name=_factor)
+
+    plot_stdh_EachError_boxplots(exp_parent_folder)
+
