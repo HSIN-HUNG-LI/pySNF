@@ -31,7 +31,7 @@ class PredictionFrame(tk.Frame):
     """
 
     # Columns shown in the prediction preview table
-    cols_all: list[str] = ["s/n", "DH(Watts)", "FN(n/s)", "FG(r/s)", "HG(r/s/kgSS304)"]
+    cols_all: list[str] = ["s/n", "DH(Watts/assy.)", "FN(n/s/assy.)", "FG(r/s/assy.)", "HG(r/s/kgSS304/MTU)"]
 
     # Required input features/order
     input_required: list[str] = ["Enrich", "SP", "Burnup", "Cool"]
