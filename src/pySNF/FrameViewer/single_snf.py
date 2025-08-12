@@ -38,7 +38,9 @@ class SingleSearchFrame(tk.Frame):
 
         # Inner frame embedded inside the canvas
         self.inner = tk.Frame(self.canvas)
-        self.window_id = self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
+        self.window_id = self.canvas.create_window(
+            (0, 0), window=self.inner, anchor="nw"
+        )
 
         # Keep scrollregion and inner width in sync
         self.inner.bind(
@@ -149,21 +151,6 @@ class SingleSearchFrame(tk.Frame):
     ) -> DataFrameViewer:
         """
         Create a DataFrameViewer in a fixed-height frame to prevent layout jumps.
-
-        Parameters
-        ----------
-        parent : tk.Misc
-            Parent container.
-        height : int
-            Fixed height (px) for the viewer container.
-        columns : list[str] | None
-            Initial DataFrame columns; empty if None.
-        title : str
-            Title displayed by the viewer.
-        side : Literal["left","right","top","bottom"]
-            Pack side for the container.
-        expand : bool
-            Whether the container expands within its row.
         """
         frame = tk.Frame(parent, height=height)
         frame.pack(fill=tk.X, side=side, expand=expand, padx=5, pady=5)  # Full width
@@ -275,18 +262,24 @@ class SingleSearchFrame(tk.Frame):
             messagebox.showerror("Error", "Enter a year.\n")
             return
         if "SNF_id" not in self.df.columns:
-            messagebox.showerror("Error", " 'SNF_id' column missing in CSV Dataframe .\n")
+            messagebox.showerror(
+                "Error", " 'SNF_id' column missing in CSV Dataframe .\n"
+            )
             return
 
         try:
             y = int(yr)
             assert 2022 <= y <= 2522
         except Exception:
-            messagebox.showerror("Error", f" Year 2022–2522 only. You entered '{yr}'.\n")
+            messagebox.showerror(
+                "Error", f" Year 2022–2522 only. You entered '{yr}'.\n"
+            )
             return
 
         # --- Data lookup (case-insensitive substring match) ---
-        matches = self.df[self.df["SNF_id"].astype(str).str.contains(name, case=False, na=False)]
+        matches = self.df[
+            self.df["SNF_id"].astype(str).str.contains(name, case=False, na=False)
+        ]
         if matches.empty:
             messagebox.showerror("Error", f" No matches for '{name}' in {yr}.\n")
             return
@@ -329,7 +322,9 @@ class SingleSearchFrame(tk.Frame):
             def _resize_keep_aspect(img: Image.Image, target_w: int) -> Image.Image:
                 w, h = img.size
                 ratio = target_w / max(1, w)
-                return img.resize((target_w, int(h * ratio)), resample=Image.Resampling.LANCZOS)
+                return img.resize(
+                    (target_w, int(h * ratio)), resample=Image.Resampling.LANCZOS
+                )
 
             w_img = _resize_keep_aspect(w_img, half_w)
             c_img = _resize_keep_aspect(c_img, half_w)
