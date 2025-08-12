@@ -29,7 +29,7 @@ class SearchApp(tk.Tk):
             "All SNFs",
             "Prediction",
         ]
-        self.mode_var = tk.StringVar(value=modes[5])
+        self.mode_var = tk.StringVar(value=modes[0])
 
         # Mode selection dropdown
         tk.OptionMenu(
