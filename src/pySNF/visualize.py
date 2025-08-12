@@ -214,38 +214,55 @@ def plot_stdh_RelativeError_boxplots(
     save_path: Optional[Path] = None,
 ) -> pd.DataFrame:
     """
-    Create a single figure with four boxplots—one for each error metric—
+    Create a single figure with four boxplots—one for each ST&DH metric—
     combining all samples (no grouping by Type).
+
+    - X-axis labels: ["DH", "FN", "HG", "FG"]
+    - Y-axis label: "Ratio" (formerly "Error")
+    - Returns the long-form DataFrame used for plotting with cleaned labels.
     """
+    # Compute relative error matrix (expects columns like: error_DH, error_FN, ...)
     df_error_matrix = compute_relative_errors(df, ERROR_METRICS)
 
-    # 1. Build a list of the four error column names
-    stdh_METRICS = ["DH", "FN", "HG", "FG"]
-    error_cols = [f"error_{metric}" for metric in stdh_METRICS]
+    # Columns to plot (expected to exist in df_error_matrix)
+    stdh_metrics = ["DH", "FN", "HG", "FG"]
+    error_cols = [f"error_{m}" for m in stdh_metrics]
 
-    # 2. Melt the DataFrame into long form: columns = ['Metric', 'Error']
-    df_long = df_error_matrix[error_cols].melt(var_name="Metric", value_name="Error")
+    # Validate presence of required columns early with a clear error
+    missing = [c for c in error_cols if c not in df_error_matrix.columns]
+    if missing:
+        raise ValueError(f"Missing expected columns in error matrix: {missing}")
+
+    # Melt to long form and rename the value field to 'Ratio'
+    df_long = df_error_matrix[error_cols].melt(var_name="Metric", value_name="Ratio")
+
+    # Strip the 'error_' prefix so x labels are just DH / FN / HG / FG
+    df_long["Metric"] = df_long["Metric"].str.replace("error_", "", regex=False)
+
+    # Enforce a consistent, desired ordering on the x-axis
+    cat_order = pd.CategoricalDtype(categories=stdh_metrics, ordered=True)
+    df_long["Metric"] = df_long["Metric"].astype(cat_order)
+
+    # --- Plot ---
     fontsize_all = 14
+    fig, ax = plt.subplots(figsize=(8, 6), dpi=600)
+    sns.boxplot(data=df_long, x="Metric", y="Ratio", ax=ax)
 
-    # 3. Draw a single row of boxplots
-    plt.figure(figsize=(8, 6), dpi=600)
-    plt.suptitle(f"{title_boxplot}", fontsize=fontsize_all + 2)
-    sns.boxplot(data=df_long, x="Metric", y="Error")
-
-    # 4. Tidy up labels and fonts
-    plt.xlabel("")  # no x-axis label
-    # plt.ylabel("Interpolation / TRITON Relative Error", fontsize=fontsize_all + 2)
-    plt.xticks(fontsize=fontsize_all)
+    # Labels, ticks, and reference line at y = 1
+    ax.set_title(title_boxplot, fontsize=fontsize_all + 2)
+    ax.set_xlabel("")  # no x-axis label
+    ax.set_ylabel("Ratio", fontsize=fontsize_all + 2)
+    ax.tick_params(axis="x", labelsize=fontsize_all)
     y_ticks = np.arange(0.4, 1.6 + 1e-8, 0.1)
-    plt.yticks(y_ticks, fontsize=fontsize_all)
-    plt.axhline(1.0, color="red", linestyle="--", linewidth=1.5, label="y = 1")
+    ax.set_yticks(y_ticks)
+    ax.tick_params(axis="y", labelsize=fontsize_all)
+    ax.axhline(1.0, color="red", linestyle="--", linewidth=1.5)
 
-    # 5. Tight layout so nothing overlaps
-    plt.tight_layout()
-    # Save if requested
+    fig.tight_layout()
+
     if save_path:
-        plt.savefig(save_path, bbox_inches="tight", dpi=300)
-    # plt.show()
+        fig.savefig(save_path, bbox_inches="tight", dpi=300)
+    plt.close(fig)
 
-    # Return the long-form DataFrame for post-plot analysis
+    # Return the long-form DataFrame for any post-plot analysis
     return df_long
