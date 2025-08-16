@@ -43,8 +43,6 @@ class SNFParquetConverter:
 
         # Combine all
         combined = pd.concat(dfs, axis=0, ignore_index=False)
-        # give the index a real name
-        # combined.index.name = "nuclide"
 
         # Write to Parquet, preserving the index (nuclide ID)
         combined.to_parquet(self.output_file)
