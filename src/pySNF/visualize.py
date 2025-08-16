@@ -7,6 +7,7 @@ from matplotlib.lines import Line2D
 import matplotlib.ticker as mticker
 from typing import Optional
 
+
 def plot_4x4_scatterplot(
     output_path: Path, df: pd.DataFrame, y_vars: list[str], plot_title: str
 ) -> None:
@@ -66,15 +67,9 @@ def plot_4x4_scatterplot(
     ALPHA = 0.7  # point transparency
 
     # Per-subplot scale control:
-    # Key = (y_var, x_var), Value = (xscale, yscale) where each is "linear" or "log".
-    # Defaults to linear; override any cell you want.
     SCALES = {(y, x): ("linear", "linear") for y in y_vars for x in x_vars}
     for y in y_vars:
         SCALES[(y, "Cool")] = ("log", "log")
-    # --- EXAMPLES (uncomment/modify as needed) ---
-    # SCALES[("HG_0y", "Cool")] = ("log", "log")
-    # SCALES[("FG_0y", "Burnup")] = ("linear", "log")
-    # SCALES[("FN_0y", "SP")] = ("linear", "linear")
 
     PALETTE_NAME = "tab10"
 
@@ -206,6 +201,7 @@ def compute_relative_errors(df: pd.DataFrame, ERROR_METRICS: list) -> pd.DataFra
     for metric, triton_col, grid_col in ERROR_METRICS:
         df[f"error_{metric}"] = df[grid_col].div(df[triton_col])
     return df
+
 
 def plot_stdh_RelativeError_boxplots(
     df: pd.DataFrame,
