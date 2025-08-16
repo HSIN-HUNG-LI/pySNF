@@ -132,7 +132,9 @@ def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
         Path to the newly created timestamped directory.
     """
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_path = get_output_dir_path() / Path(parent_folder_name) / f"{timestamp}_output"
+    output_path = (
+        get_output_dir_path() / Path(parent_folder_name) / f"{timestamp}_output"
+    )
     output_path.mkdir(parents=True, exist_ok=True)
     return output_path
 
