@@ -1,15 +1,13 @@
-import re
-import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
 import pandas as pd
 
 from base import SNFProcessor
 from FrameViewer.BaseFrame import DataFrameViewer
-from io_file import create_output_dir
+from io_file import create_output_dir, load_dataset
 
 
 class MultipleSearchFrame(tk.Frame):
@@ -160,13 +158,13 @@ class MultipleSearchFrame(tk.Frame):
             self._show_error("Dataset missing 'SNF_id' column.")
             return
 
-        path = filedialog.askopenfilename(filetypes=[("Text & CSV", "*.txt *.csv")])
+        path = Path(filedialog.askopenfilename(filetypes=[("CSV", "*.csv")]))
         if not path:
             self._show_error("No valid Path.")
             return
         try:
-            content = Path(path).read_text(encoding="utf-8-sig")
-            names = [n for n in re.split(r"[,\s]+", content) if n]
+            self.df_content = load_dataset(path)
+            names = self.df_content["SNF_id"].astype(str).tolist()
             if not names:
                 self._show_error("No valid names found.")
                 return
@@ -211,7 +209,7 @@ class MultipleSearchFrame(tk.Frame):
 
         # Accumulators
         rows: list[tuple] = []
-        grand_totals: dict[str, float] = {col: 0.0 for col in self.cols if col != "SNF_ID"}
+        grand_totals: dict[str, float] = {col: 0.0 for col in self.cols if col != "SNF_id"}
         name_summaries: list[dict[str, float]] = []
 
         # Loop over each SNF series
