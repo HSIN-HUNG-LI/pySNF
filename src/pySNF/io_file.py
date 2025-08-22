@@ -52,7 +52,7 @@ def get_grid_ParqFile_path() -> Path:
     <root>/data/DataBase_GridPoint/grid_database.parq
     """
     project_root = Path(__file__).resolve().parents[2]
-    return project_root / "data" / "DataBase_GridPoint" / "grid_database.parq"
+    return project_root / "data" / "DataBase_Grid" / "grid_database.parq"
 
 
 def load_dataset(file_path: Path) -> pd.DataFrame:
