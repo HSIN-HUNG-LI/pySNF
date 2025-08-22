@@ -7,14 +7,12 @@ from FrameViewer.all_snfs import AllSNFsFrame
 from FrameViewer.prediction import PredictionFrame
 from io_file import load_dataset, get_stdh_path
 
-
 class SearchApp(tk.Tk):
-    """Main window for SNFs Dataset Explorer App."""
-
+    """Main window for pySNF: SNF Dataset Explorer App."""
     def __init__(self):
         super().__init__()
         self.title(
-            "SNFs Explorer App © 2025 Lab of Prof. Rong-Jiun Sheu, NTHU. All rights reserved."
+            "pySNF: SNF Dataset Explorer App"
         )
         self.geometry("1200x600")
 
