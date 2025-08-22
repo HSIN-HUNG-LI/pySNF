@@ -301,7 +301,7 @@ class SingleSearchFrame(tk.Frame):
         self._insert_rows(self.Ci_viewer, df_ci)
 
         # --- Generate plots and write Excel ---
-        output_dir = create_output_dir(parent_folder_name="Results_Single")
+        output_dir = create_output_dir(parent_folder_name="Results_Single_SNF")
         proc.plot_single_SNF(output_dir)
         proc.write_excel(df_stdh, df_ci, df_gram, output_dir, name)
 
