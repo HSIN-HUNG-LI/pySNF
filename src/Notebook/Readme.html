@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SNF Data Processing Toolkit - README</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; max-width: 960px; }
+    h1, h2, h3 { color: #2c3e50; }
+    code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    ul { margin-left: 20px; }
+    .section { margin-bottom: 40px; }
+  </style>
+</head>
+<body>
+  <h1>SNF Data Processing Toolkit</h1>
+  <p>
+    This repository provides a set of scripts and utility modules for managing,
+    converting, and analyzing <strong>Spent Nuclear Fuel (SNF)</strong> datasets.
+    It supports CSV, Excel, and Parquet formats and provides functions for filtering,
+    error computation, and visualization.
+  </p>
+
+  <div class="section">
+    <h2>Project Structure</h2>
+    <ul>
+      <li><strong>converter_Parquet.ipynb</strong> – Convert Excel/CSV SNF datasets into Parquet format.</li>
+      <li><strong>converter_tsc01_TestFile.ipynb</strong> – Filter datasets based on SNF name lists and export filtered results.</li>
+      <li><strong>core_note.py</strong> – Core module containing the <code>SNFParquetConverter</code> class for structured conversions and parquet handling.</li>
+      <li><strong>util_note.py</strong> – Utility functions for data loading, error computation, visualization, and statistical summarization.</li>
+      <li><strong>data/</strong> – Folder containing raw input files such as <code>all_stdh_dataset.csv</code> and grid database files.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Key Features</h2>
+    <ul>
+      <li>Convert CSV/XLSX to <code>.parq</code> (Parquet) for faster I/O and reduced storage usage.</li>
+      <li>Filter SNF datasets based on name lists from text files.</li>
+      <li>Map SNF names to internal <code>SNF_id</code> codes and export to TXT/CSV.</li>
+      <li>Generate descriptive error metrics (FN, FG, HG, DH) comparing TRITON vs grid interpolation results.</li>
+      <li>Visualize errors using boxplots (grouped by Type or aggregated across samples).</li>
+      <li>Create timestamped experiment output directories for result tracking.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Modules and Usage</h2>
+
+    <h3>1. converter_Parquet.ipynb</h3>
+    <p>
+      Convert an Excel file (e.g., <code>grid_database_weighted.xlsx</code>)
+      to Parquet:
+    </p>
+    <pre><code>df = pd.read_excel("data/grid_database_weighted.xlsx", engine="openpyxl")
+df.to_parquet("data/grid_database.parq")</code></pre>
+
+    <h3>2. converter_tsc01_TestFile.ipynb</h3>
+    <p>
+      Filter SNFs based on <code>TSC01_SNFs.txt</code>:
+    </p>
+    <pre><code>python converter_tsc01_TestFile.ipynb
+# Loads all_stdh_dataset.csv
+# Filters rows where Name is in TSC01_SNFs_id.csv
+# Saves filtered results to all_stdh_dataset_tsc01.csv</code></pre>
+
+    <h3>3. core_note.py</h3>
+    <p>Contains <code>SNFParquetConverter</code> class:</p>
+    <ul>
+      <li><code>convert_single_to_parquet()</code> – Convert one file (CSV/XLSX) to Parquet.</li>
+      <li><code>convert_to_parquet()</code> – Convert all CSV/XLSX in a folder, append source file tags, save as Parquet.</li>
+      <li><code>read_parquet()</code> – Load full Parquet dataset.</li>
+      <li><code>read_by_source()</code> – Query only rows from a specific source file.</li>
+    </ul>
+
+    <h3>4. util_note.py</h3>
+    <ul>
+      <li><code>load_data()</code> – Load CSV and apply <code>CATEGORY_MAP</code> to normalize fuel types.</li>
+      <li><code>compute_relative_errors()</code> – Compute interpolation vs TRITON relative errors for FN, FG, HG, DH.</li>
+      <li><code>plot_error_boxplots()</code> – 2×2 grid of error boxplots grouped by <code>Type</code>.</li>
+      <li><code>plot_one_error_boxplots()</code> – Single-row boxplots for all error metrics combined.</li>
+      <li><code>summarize_error_stats()</code> – Generate descriptive statistics (mean, std, quartiles, etc.) and export to Excel.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Example Workflow</h2>
+    <ol>
+      <li>Convert raw Excel dataset to Parquet:
+        <pre><code>python core_note.py</code></pre>
+      </li>
+      <li>Filter dataset for specific SNF IDs:
+        <pre><code>python converter_tsc01_TestFile.ipynb</code></pre>
+      </li>
+      <li>Compute errors and generate plots:
+        <pre><code>
+from util_note import load_data, compute_relative_errors, plot_one_error_boxplots
+df = load_data("data/all_stdh_dataset.csv", CATEGORY_MAP)
+df = compute_relative_errors(df, ERROR_METRICS)
+plot_one_error_boxplots(df, ERROR_METRICS, "SNF Relative Errors")
+        </code></pre>
+      </li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>Dependencies</h2>
+    <ul>
+      <li><code>pandas</code> – DataFrame operations</li>
+      <li><code>numpy</code> – Numerical computations</li>
+      <li><code>openpyxl</code> – Excel file support</li>
+      <li><code>matplotlib</code>, <code>seaborn</code> – Data visualization</li>
+      <li><code>pyarrow</code> – Parquet support</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Outputs</h2>
+    <ul>
+      <li><code>.parq</code> – Efficiently compressed Parquet file for large datasets.</li>
+      <li><code>all_stdh_dataset_tsc01.csv</code> – Filtered SNF dataset for TSC01.</li>
+      <li><code>TSC01_SNF_id.txt / TSC01_SNF_id.csv</code> – SNF IDs mapped from names.</li>
+      <li>Boxplot figures – Relative error visualization.</li>
+      <li>Excel statistics – Summarized error statistics per metric.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>License</h2>
+    <p>
+      This project is provided for research and academic purposes.
+      Users must ensure compliance with institutional and data security guidelines.
+    </p>
+  </div>
+</body>
+</html>
