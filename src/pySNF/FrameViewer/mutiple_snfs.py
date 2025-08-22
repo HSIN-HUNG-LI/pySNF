@@ -252,7 +252,7 @@ class MultipleSearchFrame(tk.Frame):
         # Optionally save results to CSV
         if self.save_var.get() and rows:
             try:
-                out_dir = create_output_dir(parent_folder_name="Results_Multiple")
+                out_dir = create_output_dir(parent_folder_name="Results_Multiple_SNFs")
                 pd.DataFrame(rows, columns=self.cols).to_csv(
                     out_dir / "Multiple_STDH_results.csv", index=False
                 )
