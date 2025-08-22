@@ -137,8 +137,8 @@ class SNFProcessor:
         cols = [
             "DH(Watts/assy.)",
             "FN(n/s/assy.)",
-            "HG(r/s/kgSS304/MTU)",
             "FG(r/s/assy.)",
+            "HG(r/s/kgSS304/MTU)",
         ]
 
         # Expect exactly one row in df_STDH_filtered; preserve original behavior
