@@ -43,6 +43,7 @@ def get_output_dir_path() -> Path:
     project_root = Path(__file__).resolve().parents[2]
     return project_root / "output"
 
+GRID_SPACE = "1412"
 
 def get_grid_ParqFile_path() -> Path:
     """
@@ -52,8 +53,13 @@ def get_grid_ParqFile_path() -> Path:
     <root>/data/DataBase_GridPoint/grid_database.parq
     """
     project_root = Path(__file__).resolve().parents[2]
-    return project_root / "data" / "DataBase_Grid" / "grid_database.parq"
+    return project_root / "data" / "DataBase_Grid" / f"grid_database_{GRID_SPACE}.parq"
 
+def get_grid_space() -> str:
+    """
+    Return the grid space identifier used in the application.
+    """
+    return str(GRID_SPACE)
 
 def load_dataset(file_path: Path) -> pd.DataFrame:
     """
