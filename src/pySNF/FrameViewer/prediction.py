@@ -18,6 +18,7 @@ from io_file import (
     get_grid_ParqFile_path,
     get_stdh_path,
     create_output_dir,
+    get_grid_space,
 )
 
 
@@ -363,10 +364,20 @@ class PredictionFrame(tk.Frame):
             return
         # Define interpolation spaces
         grid_data = self.grid_data
+        grid_space = get_grid_space()
+        enrich_factor = int(grid_space[0])
+        sp_factor = int(grid_space[1])
+        bp_factor = int(grid_space[2])
+        cool_factor = int(grid_space[3])
+
         enrich_space = np.arange(1.5, 6.1, 0.5)
+        enrich_space = enrich_space[0::enrich_factor]
         sp_space = np.arange(5, 46, 5)
+        sp_space = sp_space[0::sp_factor]
         burnup_space = np.arange(5000, 74100, 3000)
-        cool_space = np.logspace(-5.75, 6.215, 150, base=math.e)
+        burnup_space = burnup_space[0::bp_factor]
+        cool_space_raw = np.logspace(-5.75, 6.215, 150, base=math.e)
+        cool_space = cool_space_raw[1::cool_factor]
 
         out_cols = [f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")]
         series_list: list[pd.Series] = []
