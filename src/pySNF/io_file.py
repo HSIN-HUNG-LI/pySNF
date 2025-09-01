@@ -48,9 +48,6 @@ GRID_SPACE = "1412"
 def get_grid_ParqFile_path() -> Path:
     """
     Return the absolute path to the grid Parquet file used by prediction.
-
-    The path is resolved relative to the repository root:
-    <root>/data/DataBase_GridPoint/grid_database.parq
     """
     project_root = Path(__file__).resolve().parents[2]
     return project_root / "data" / "DataBase_Grid" / f"grid_database_{GRID_SPACE}.parq"
