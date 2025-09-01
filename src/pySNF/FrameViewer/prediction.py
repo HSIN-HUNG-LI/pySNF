@@ -364,7 +364,7 @@ class PredictionFrame(tk.Frame):
             return
         # Define interpolation spaces
         grid_data = self.grid_data
-        grid_space = get_grid_space()
+        grid_space = get_grid_space() # e.g. "1412"
         enrich_factor = int(grid_space[0])
         sp_factor = int(grid_space[1])
         bp_factor = int(grid_space[2])
