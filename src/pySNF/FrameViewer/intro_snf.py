@@ -18,27 +18,27 @@ class IntroFrame(tk.Frame):
         text.insert(
             tk.END,
 """
-🔍 pySNF: SNF Dataset Explorer App:
-pySNF is a Python App designed to facilitate data exploration and prediction of spent nuclear fuel characteristics
-Exploration: data query, analysis, and visualization of the existing spent nuclear fuel dataset
-Prediction: estimate decay heat and source terms of a spent nuclear fuel according to its burnup and cooling time
+pySNF: SNF Dataset Explorer App:
+pySNF is a Python App designed to facilitate data exploration and prediction of spent nuclear fuel characteristics.
+Exploration: data query, analysis, and visualization of the existing spent nuclear fuel dataset;
+Prediction: estimate decay heat and source terms of a spent nuclear fuel according to its burnup, cooling time, etc.
 
-Keywords:
+🔍 Keywords:
 spent nuclear fuel (SNF), composition, nuclide, weight, activity,
 decay heat (DH), source term (ST), fuel neutron (FN), fuel gamma (FG), hardware gamma (HG),
-burnup (Bp), cooling time (Ct), enrichment (En), specific power (Sp), etc. 
+burnup (Bp), cooling time (Ct), enrichment (En), specific power (Sp), etc.
 
 📁 App installation and usage:
 (0) Unpacking the download file: pySNF.zip
 (1) Installing the latest Python on your platform
-(2) Installing the required packages using > pip install -r requirements.txt
-(3) Executing the app by entering > py main.py
+(2) Installing the required packages using: > pip install -r requirements.txt
+(3) Executing the app by entering: > py main.py
 
 Please ensure the following directories and files are correctly set up:
 pySNF/data/DataBase_SNFs/:
-→ all_stdh_dataset.csv: fuel ID and important information for all spent nuclear fuels
-→ Individual SNF files: nuclides (weight and activity) in each fuel as a function of colling time 
-pySNF/data/DataBase_GridPoint/:
+→ all_stdh_dataset.csv: fuel ID and important information for all spent nuclear fuels in this dataset
+→ Individual SNF files: nuclide composition (weight and activity) of each fuel as a function of colling time 
+pySNF/data/DataBase_Grid/:
 → grid_database.parq: a pre-processed grid database in Parquet format used for predicting SNF characteristics
 
 Developers: Hsin-Hung Li, Po-Chen Tsai, and Rong-Jiun Sheu at National Tsing Hua University.
