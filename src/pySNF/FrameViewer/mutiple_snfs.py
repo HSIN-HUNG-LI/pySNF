@@ -31,38 +31,51 @@ class MultipleSearchFrame(tk.Frame):
         self.selected_names: list[str] = []         # SNF names for batch search
 
         # Column definitions shared across methods
-        self.cols: list[str] = [
+        self.viewer_cols: list[str] = [
+            "SNF_id",
+            "DH (W/assy.)",
+            "FN (n/s/assy.)",
+            "FG (r/s/assy.)",
+            "HG (r/s/kgSS304/MTU)",
+        ]
+        self.df_cols: list[str] = [
             "SNF_id",
             "DH(Watts/assy.)",
             "FN(n/s/assy.)",
             "FG(r/s/assy.)",
             "HG(r/s/kgSS304/MTU)",
         ]
-
         # ── Build Input Controls ───────────────────────────────────────────────
-        input_frame = tk.Frame(self)
-        input_frame.pack(fill=tk.X, padx=10, pady=5)
-
+        # First row for name entry and action buttons
+        row1 = tk.Frame(self)
+        row1.pack(fill=tk.X, padx=10, pady=10)
         # SNF_id entry and action buttons
-        tk.Label(input_frame, text="SNFs id:").pack(side=tk.LEFT)
-        self.name_entry = tk.Entry(input_frame, width=20)
+        tk.Label(row1, text="(1) SNFs id:").pack(side=tk.LEFT)
+        self.name_entry = tk.Entry(row1, width=20)
         self.name_entry.insert(0, "1C2505")  # Default SNF name
         self.name_entry.pack(side=tk.LEFT, padx=5)
+        tk.Button(row1, text="Add", command=self.add_multiple).pack(side=tk.LEFT)
+        tk.Button(row1, text="Delete", command=self.delete_multiple).pack(side=tk.LEFT, padx=5)
+        tk.Button(row1, text="Clear All", command=self.clear_all).pack(side=tk.LEFT, padx=5)
+        tk.Label(row1, text="OR").pack(side=tk.LEFT, padx=(10, 0))
 
-        tk.Button(input_frame, text="Add", command=self.add_multiple).pack(side=tk.LEFT)
-        tk.Button(input_frame, text="Delete", command=self.delete_multiple).pack(side=tk.LEFT, padx=5)
-        tk.Button(input_frame, text="Clear All", command=self.clear_all).pack(side=tk.LEFT, padx=5)
-        tk.Button(input_frame, text="Load (file)", command=self.load_list).pack(side=tk.LEFT)
+        # Second row for file load 
+        row2 = tk.Frame(self)
+        row2.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(row2, text="(2) Load a csv file, e.g., TSC01_SNFs_Id.csv").pack(side=tk.LEFT, padx=(0, 0))
+        tk.Button(row2, text="Load", command=self.load_list).pack(side=tk.LEFT, padx=(10, 0))
 
-        # Year entry and search button
-        tk.Label(input_frame, text="Year (2022–2522):").pack(side=tk.LEFT, padx=(20, 0))
-        self.year_entry = tk.Entry(input_frame, width=10)
+        # Third row for year entry and search button
+        row3 = tk.Frame(self)
+        row3.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(row3, text="Year (2022–2522):").pack(side=tk.LEFT, padx=(0, 0))
+        self.year_entry = tk.Entry(row3, width=10)
         self.year_entry.insert(0, "2025")  # Default year
         self.year_entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(input_frame, text="Output", command=self.search_multiple).pack(side=tk.LEFT)
+        tk.Button(row3, text="Output", command=self.search_multiple).pack(side=tk.LEFT, padx=(10, 0))
 
         # Toggle for saving output
-        tk.Checkbutton(input_frame, text="Save output", variable=self.save_var).pack(side=tk.LEFT, padx=5)
+        tk.Checkbutton(row3, text="Save output", variable=self.save_var).pack(side=tk.LEFT, padx=5)
 
         # Text log area
         self.multi_text = tk.Text(self, height=4, wrap=tk.WORD)
@@ -73,7 +86,7 @@ class MultipleSearchFrame(tk.Frame):
         result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
         result_frame.pack_propagate(False)
 
-        empty_df = pd.DataFrame(columns=self.cols)
+        empty_df = pd.DataFrame(columns=self.viewer_cols)
         self.STDH_df_viewer = DataFrameViewer(result_frame, empty_df, title="Decay Heat & Source Terms")
         self.STDH_df_viewer.pack(fill=tk.BOTH, expand=True)
 
@@ -209,7 +222,7 @@ class MultipleSearchFrame(tk.Frame):
 
         # Accumulators
         rows: list[tuple] = []
-        grand_totals: dict[str, float] = {col: 0.0 for col in self.cols if col != "SNF_id"}
+        grand_totals: dict[str, float] = {col: 0.0 for col in self.df_cols if col != "SNF_id"}
         name_summaries: list[dict[str, float]] = []
 
         # Loop over each SNF series
@@ -226,7 +239,7 @@ class MultipleSearchFrame(tk.Frame):
 
             # Ensure numeric and accumulate per-series totals
             per_name_totals: dict[str, float] = {}
-            for col in self.cols[1:]:
+            for col in self.df_cols[1:]:
                 df_stdh[col] = pd.to_numeric(df_stdh[col], errors="coerce")
                 sum_val = df_stdh[col].sum()
                 grand_totals[col] += sum_val
@@ -251,7 +264,7 @@ class MultipleSearchFrame(tk.Frame):
         if self.save_var.get() and rows:
             try:
                 out_dir = create_output_dir(parent_folder_name="Results_Multiple_SNFs")
-                pd.DataFrame(rows, columns=self.cols).to_csv(
+                pd.DataFrame(rows, columns=self.df_cols).to_csv(
                     out_dir / "Multiple_STDH_results.csv", index=False
                 )
             except Exception as e:
@@ -272,23 +285,23 @@ class MultipleSearchFrame(tk.Frame):
         rows: list[tuple] = []
 
         # Sum row
-        sum_row = tuple(["Sum"] + [f"{grand_totals[col]:.2e}" for col in self.cols[1:]])
+        sum_row = tuple(["Sum"] + [f"{grand_totals[col]:.2e}" for col in self.df_cols[1:]])
         rows.append(sum_row)
 
         # Average row
         n = max(1, len(name_summaries))  # guard against division by zero (not expected)
-        avg_row = tuple(["Average"] + [f"{grand_totals[col] / n:.2e}" for col in self.cols[1:]])
+        avg_row = tuple(["Average"] + [f"{grand_totals[col] / n:.2e}" for col in self.df_cols[1:]])
         rows.append(avg_row)
 
         # Min row
         min_row = tuple(
-            ["Min"] + [f"{min(ns[col] for ns in name_summaries):.2e}" for col in self.cols[1:]]
+            ["Min"] + [f"{min(ns[col] for ns in name_summaries):.2e}" for col in self.df_cols[1:]]
         )
         rows.append(min_row)
 
         # Max row
         max_row = tuple(
-            ["Max"] + [f"{max(ns[col] for ns in name_summaries):.2e}" for col in self.cols[1:]]
+            ["Max"] + [f"{max(ns[col] for ns in name_summaries):.2e}" for col in self.df_cols[1:]]
         )
         rows.append(max_row)
 
