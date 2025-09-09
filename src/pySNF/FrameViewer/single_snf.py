@@ -92,10 +92,10 @@ class SingleSearchFrame(tk.Frame):
             parent=self.inner,
             height=150,
             columns=[
-                "DH(Watts/assy.)",
-                "FN(n/s/assy.)",
-                "FG(r/s/assy.)",
-                "HG(r/s/kgSS304/MTU)",
+                "DH (W/assy.)",
+                "FN (n/s/assy.)",
+                "FG (r/s/assy.)",
+                "HG (r/s/kgSS304/MTU)",
             ],
             title="Decay Heat & Source Terms",
         )
