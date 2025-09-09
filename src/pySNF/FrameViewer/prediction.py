@@ -24,15 +24,21 @@ from io_file import (
 
 class PredictionFrame(tk.Frame):
     """
-    Frame to 
+    Frame to
     (1) predict Source Term & Decay Heat (ST&DH) from fuel parameters,
-    (2) preview the results, 
+    (2) preview the results,
     (3) optionally export data/figures, and
     (4) run verification plots against a reference dataset.
     """
 
     # Columns shown in the prediction preview table
-    cols_all: list[str] = ["s/n", "DH(Watts/assy.)", "FN(n/s/assy.)", "HG(r/s/kgSS304/MTU)", "FG(r/s/assy.)"]
+    cols_all: list[str] = [
+        "s/n",
+        "DH (W/assy.)",
+        "FN (n/s/assy.)",
+        "HG (r/s/kgSS304/MTU)",
+        "FG (r/s/assy.)",
+    ]
 
     # Required input features/order
     input_required: list[str] = ["Enrich", "SP", "Burnup", "Cool"]
@@ -65,7 +71,6 @@ class PredictionFrame(tk.Frame):
         # Layout
         self._setup_scrollable_canvas()
         self._build_ui()
-        self._log_initial_message()
 
     # ────────────────────────────────────────────────────────────────────────
     # UI scaffolding
@@ -79,91 +84,99 @@ class PredictionFrame(tk.Frame):
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self.inner = tk.Frame(self.canvas)
-        self.window_id = self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
-        self.inner.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(self.window_id, width=e.width))
+        self.window_id = self.canvas.create_window(
+            (0, 0), window=self.inner, anchor="nw"
+        )
+        self.inner.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
+        )
+        self.canvas.bind(
+            "<Configure>",
+            lambda e: self.canvas.itemconfigure(self.window_id, width=e.width),
+        )
 
     def _build_ui(self) -> None:
         """Set up controls, log areas, and DataFrame viewers."""
+        # row0: verification
+        row0 = tk.Frame(self.inner)
+        row0.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(
+            row0,
+            text="Verification:",
+            font=("Helvetica", 12, "bold"),
+        ).pack(side=tk.LEFT)
+        tk.Label(
+            row0,
+            text="A case study by comparing the pySNF predictions with the TRITON calculations for a large numbers of SNFs",
+        ).pack(side=tk.LEFT)
+        row0_1 = tk.Frame(self.inner)
+        row0_1.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Button(row0_1, text="Run Test Case", command=self._verification).pack(
+            side=tk.LEFT
+        )
+        tk.Label(
+            row0_1,
+            text="Check the results (SNFs_comparsion.png, SNFs_dataset.png, SNFs_prediction.png) in folder output/Prediction",
+        ).pack(side=tk.LEFT)
+
         # Row: section label
         row = tk.Frame(self.inner)
         row.pack(fill=tk.X, padx=10, pady=(0, 10))
-        tk.Label(row, text="SNF Spec:").pack(side=tk.LEFT)
+        tk.Label(
+            row,
+            text="Predictions of SNF's Decay Heat & Source Terms",
+            font=("Helvetica", 12, "bold"),
+        ).pack(side=tk.LEFT)
 
-        # Row1: four numeric inputs + Output + Save toggle
-        row1 = tk.Frame(self.inner)
-        row1.pack(fill=tk.X, padx=10, pady=(0, 10))
-
-        tk.Label(row1, text="Burnup (MWd/MTU):").pack(side=tk.LEFT)
-        self.burnup_entry = tk.Entry(row1, width=10)
+        # row1: four numeric inputs + Output + Save toggle
+        row1_1 = tk.Frame(self.inner)
+        row1_1.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(
+            row1_1, text="(1) SNF spec: Bp & Ct are required, En & Sp are optional"
+        ).pack(side=tk.LEFT)
+        row1_2 = tk.Frame(self.inner)
+        row1_2.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(row1_2, text="Bp (MWd/MTU):").pack(side=tk.LEFT)
+        self.burnup_entry = tk.Entry(row1_2, width=10)
         self.burnup_entry.insert(0, f"{self.snf_stats['Burnup']}")
         self.burnup_entry.pack(side=tk.LEFT, padx=5)
 
-        tk.Label(row1, text="Cooling time (Year):").pack(side=tk.LEFT)
-        self.year_entry = tk.Entry(row1, width=10)
+        tk.Label(row1_2, text="Ct (Year):").pack(side=tk.LEFT)
+        self.year_entry = tk.Entry(row1_2, width=10)
         self.year_entry.insert(0, f"{self.snf_stats['Cool']}")
         self.year_entry.pack(side=tk.LEFT, padx=5)
 
-        tk.Label(row1, text="Enrichment (%U235):").pack(side=tk.LEFT)
-        self.enrich_entry = tk.Entry(row1, width=10)
+        tk.Label(row1_2, text="En (%U235):").pack(side=tk.LEFT)
+        self.enrich_entry = tk.Entry(row1_2, width=10)
         self.enrich_entry.insert(0, f"{self.snf_stats['Enrich']}")
         self.enrich_entry.pack(side=tk.LEFT, padx=5)
 
-        tk.Label(row1, text="Specific Power (MW):").pack(side=tk.LEFT)
-        self.sp_entry = tk.Entry(row1, width=10)
+        tk.Label(row1_2, text="SP (MW):").pack(side=tk.LEFT)
+        self.sp_entry = tk.Entry(row1_2, width=10)
         self.sp_entry.insert(0, f"{self.snf_stats['SP']}")
         self.sp_entry.pack(side=tk.LEFT, padx=5)
 
-        tk.Button(row1, text="Output", command=self._on_output).pack(side=tk.LEFT)
-        tk.Checkbutton(row1, text="Save output", variable=self.save_var).pack(side=tk.LEFT)
-
-        # Log (mode instructions)
-        self.multi_text = tk.Text(self.inner, height=6, wrap=tk.WORD)
-        self.multi_text.pack(fill=tk.X, padx=10)
-
-        # Prediction preview viewer
-        self.STDH_viewer = self._make_viewer(
-            parent=self.inner,
-            height=200,
-            columns=self.cols_all,
-            title="Predictions in Decay Heat & Source Terms",
+        tk.Button(row1_2, text="Output", command=self._on_output).pack(side=tk.LEFT)
+        tk.Checkbutton(row1_2, text="Save output", variable=self.save_var).pack(
+            side=tk.LEFT
         )
 
         # Row2: batch file load
         row2 = tk.Frame(self.inner)
-        row2.pack(fill=tk.X, padx=10, pady=10)
-        tk.Label(row2, text="SNFs Specs by a batch file:").pack(side=tk.LEFT)
-        entry_batch = tk.Entry(row2, width=40)
-        entry_batch.insert(0, "Use right button to load file and Output")
-        entry_batch.config(state="disabled")
-        entry_batch.pack(side=tk.LEFT, padx=5)
-        tk.Button(row2, text="Load and Output", command=self.load_list).pack(side=tk.LEFT)
+        row2.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(
+            row2,
+            text="(2) SNFs Specs: Load a csv file, e.g., Prediction_tsc01_batch.csv",
+        ).pack(side=tk.LEFT)
+        tk.Button(row2, text="Load & Output", command=self.load_list).pack(side=tk.LEFT)
 
-        # Row3: verification
-        row3 = tk.Frame(self.inner)
-        row3.pack(fill=tk.X, padx=10, pady=10)
-        tk.Label(row3, text="Verification:").pack(side=tk.LEFT)
-        entry_ver = tk.Entry(row3, width=40)
-        entry_ver.insert(0, "Use right button to load file and Output")
-        entry_ver.config(state="disabled")
-        entry_ver.pack(side=tk.LEFT, padx=5)
-        tk.Button(row3, text="Output", command=self._verification).pack(side=tk.LEFT)
-
-        # Log (verification help)
-        self.multi_text2 = tk.Text(self.inner, height=5, wrap=tk.WORD)
-        self.multi_text2.pack(fill=tk.X, padx=10)
-        self.multi_text2.delete("1.0", tk.END)
-        self.multi_text2.insert(
-            "1.0",
-            (
-                "Verify model predictions for Source Term and Decay Heat (ST&DH).\n"
-                "This routine exports three diagnostic PNG figures (saved to the output directory):\n"
-                "  1) Reference dataset distribution — 'SNFs_dataset.png'\n"
-                "  2) Prediction distribution — 'SNFs_prediction.png'\n"
-                "  3) Relative error distribution (prediction vs. reference) — 'SNFs_comparison.png'\n"
-                "\n"
-                "Use these plots to quickly assess data coverage, model behavior, and error characteristics.\n"
-            ),
+        # Prediction preview viewer
+        self.STDH_viewer = self._make_viewer(
+            parent=self.inner,
+            height=300,
+            columns=self.cols_all,
+            title="Decay Heat & Source Terms",
         )
 
     def _make_viewer(
@@ -184,25 +197,6 @@ class PredictionFrame(tk.Frame):
         viewer.pack(fill=tk.BOTH, expand=True)
         return viewer
 
-    def _log_initial_message(self) -> None:
-        """Show instructions for the two prediction modes."""
-        self.multi_text.delete("1.0", tk.END)
-        self.multi_text.insert(
-            "1.0",
-            (
-                "Source Term & Decay Heat (ST&DH) — Prediction Modes\n"
-                "Choose one of the following:\n"
-                "  1) Manual input: enter the parameters above and click 'Output'.\n"
-                "  2) Batch input: provide a table with columns [Enrich, SP, Burnup, Cool],\n"
-                "     then click 'Load and Output' to import the file (you may also use files\n"
-                "     from the 'TEST_prediction' folder).\n"
-                "\n"
-                "Notes:\n"
-                "  • The preview shows at most the first 100 rows.\n"
-                "  • All results are saved to the output directory.\n"
-            ),
-        )
-
     # ────────────────────────────────────────────────────────────────────────
     # Small helpers
     # ────────────────────────────────────────────────────────────────────────
@@ -216,21 +210,6 @@ class PredictionFrame(tk.Frame):
         for vals in df.itertuples(index=False, name=None):
             viewer.tree.insert("", "end", values=vals)
 
-    def _log_file_message(self) -> None:
-        """Display initial dataset summary in the log with highlighted SNF count."""
-        self.multi_text.delete("1.0", tk.END)
-        self.multi_text.tag_configure("highlight", font=("TkDefaultFont", 10, "bold", "underline"))
-        self.multi_text.insert("1.0", f"From ~/{self.df_path} \nRead file and Load ")
-        self.multi_text.insert(tk.END, str(self.n_snfs), "highlight")
-        self.multi_text.insert(
-            tk.END,
-            (
-                " SNFs.\n"
-                "If compute ~6800 fuels, wait >360s,\n"
-                "processing 14,000 files (~5.5M rows).\n"
-            ),
-        )
-
     def _show_running_dialog(self) -> None:
         """Modal dialog showing elapsed time and an option to cancel."""
         dlg = tk.Toplevel(self)
@@ -238,7 +217,9 @@ class PredictionFrame(tk.Frame):
         dlg.geometry("350x120")
         self.elapsed_label = tk.Label(dlg, text="Starting...")
         self.elapsed_label.pack(pady=10)
-        tk.Button(dlg, text="Stop Running", command=lambda: setattr(self, "_running", False)).pack()
+        tk.Button(
+            dlg, text="Stop Running", command=lambda: setattr(self, "_running", False)
+        ).pack()
         self._dlg = dlg
         self._start_time = time.time()
         self._update_timer()
@@ -294,9 +275,6 @@ class PredictionFrame(tk.Frame):
         """
         Handler for the 'Output' button: validate inputs and run a one-row prediction.
         """
-        self.multi_text.delete("1.0", tk.END)
-        self.multi_text.insert("1.0", "Compute by input parameters… ")
-
         df_in = self.get_parameters_dataframe()
         if df_in is None:
             return  # error already shown
@@ -312,7 +290,9 @@ class PredictionFrame(tk.Frame):
         df_stdh = pd.read_csv(get_stdh_path())
 
         # Dataset plots
-        plot_title_dataset = "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
+        plot_title_dataset = (
+            "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
+        )
         output_fig = output_pred / "SNFs_dataset.png"
         y_vars = ["DH_0y", "FN_0y", "HG_0y", "FG_0y"]
         plot_4x4_scatterplot(output_fig, df_stdh, y_vars, plot_title_dataset)
@@ -320,7 +300,12 @@ class PredictionFrame(tk.Frame):
         # Prediction plots
         plot_title_pred = "[Prediction] Targets vs. Fuel Parameters — Colored by Type"
         output_fig_pred = output_pred / "SNFs_prediction.png"
-        y_vars_pred = ["DH_prediction", "FN_prediction", "HG_prediction", "FG_prediction"]
+        y_vars_pred = [
+            "DH_prediction",
+            "FN_prediction",
+            "HG_prediction",
+            "FG_prediction",
+        ]
         plot_4x4_scatterplot(output_fig_pred, df_stdh, y_vars_pred, plot_title_pred)
 
         # Relative error boxplots
@@ -332,12 +317,16 @@ class PredictionFrame(tk.Frame):
         ]
         title_boxplot = "[Prediction / Dataset] Error of Decay Heat & Source Terms"
         RelativeError_save_path = output_pred / "SNFs_comparsion.png"
-        plot_stdh_RelativeError_boxplots(df_stdh, self.error_metrics_ColName, title_boxplot, RelativeError_save_path)
+        plot_stdh_RelativeError_boxplots(
+            df_stdh, self.error_metrics_ColName, title_boxplot, RelativeError_save_path
+        )
 
     def load_list(self) -> None:
         """Load a batch of SNF specs from an Excel/CSV file and start prediction."""
         # Capture the raw path first to correctly detect cancellation
-        path_str = filedialog.askopenfilename(filetypes=[("Excel or CSV", "*.xlsx *.csv")])
+        path_str = filedialog.askopenfilename(
+            filetypes=[("Excel or CSV", "*.xlsx *.csv")]
+        )
         if not path_str:
             messagebox.showerror("Error", "No valid Path.")
             return
@@ -364,7 +353,7 @@ class PredictionFrame(tk.Frame):
             return
         # Define interpolation spaces
         grid_data = self.grid_data
-        grid_space = get_grid_space() # e.g. "1412"
+        grid_space = get_grid_space()  # e.g. "1412"
         enrich_factor = int(grid_space[0])
         sp_factor = int(grid_space[1])
         bp_factor = int(grid_space[2])
@@ -429,4 +418,3 @@ class PredictionFrame(tk.Frame):
                 axis=1,
             )
             save_PredData(df_out)
-
