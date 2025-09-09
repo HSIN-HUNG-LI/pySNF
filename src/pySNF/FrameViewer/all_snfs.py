@@ -92,7 +92,7 @@ class AllSNFsFrame(tk.Frame):
             parent=self.inner,
             height=150,
             columns=self.cols_all,
-            title="Source Term & Decay Heat",
+            title="Decay Heat & Source Terms",
         )
 
         # Weight/Activity side-by-side container
