@@ -126,7 +126,7 @@ class PredictionFrame(tk.Frame):
             parent=self.inner,
             height=200,
             columns=self.cols_all,
-            title="Predictions in Source Term & Decay Heat",
+            title="Predictions in Decay Heat & Source Terms",
         )
 
         # Row2: batch file load
@@ -330,7 +330,7 @@ class PredictionFrame(tk.Frame):
             ("HG", "HG_0y", "HG_prediction"),
             ("DH", "DH_0y", "DH_prediction"),
         ]
-        title_boxplot = "[Prediction / Dataset] Relative Error across Source term and Decay heat"
+        title_boxplot = "[Prediction / Dataset] Error of Decay Heat & Source Terms"
         RelativeError_save_path = output_pred / "SNFs_comparsion.png"
         plot_stdh_RelativeError_boxplots(df_stdh, self.error_metrics_ColName, title_boxplot, RelativeError_save_path)
 
