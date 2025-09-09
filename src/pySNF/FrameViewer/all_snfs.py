@@ -40,10 +40,10 @@ class AllSNFsFrame(tk.Frame):
 
         # Column names for the STDH totals table
         self.cols_all = [
-            "DH(Watts/all)",
-            "FN(n/s/all)",
-            "FG(r/s/all)",
-            "HG(r/s/all)",
+            "DH (W/all)",
+            "FN (n/s/all)",
+            "FG (r/s/all)",
+            "HG (r/s/all)",
         ]
 
         # Layout and initial message
@@ -51,7 +51,7 @@ class AllSNFsFrame(tk.Frame):
         self._build_ui()
         self.multi_text.insert(
             "1.0",
-            "Read all stdh dataset from [test_files] folder to compute "
+            "Read test files to compute "
             "sum of source term and decay heat with nuclide weight and activity",
         )
 
@@ -60,26 +60,21 @@ class AllSNFsFrame(tk.Frame):
     # ──────────────────────────────────────────────────────────────────────────
     def _build_ui(self) -> None:
         """Set up controls, the log text area, and three DataFrame viewers."""
-        # Controls (dataset path, year, run/save)
-        controls = tk.Frame(self.inner)
-        controls.pack(fill=tk.X, padx=10, pady=10)
-
-        tk.Label(controls, text="SNFs dataset:").pack(side=tk.LEFT)
-        entry = tk.Entry(controls, width=40)
-        entry.insert(0, "Use right button to load Excel file")
-        entry.config(state="disabled")
-        entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(controls, text="Load (file)", command=self.load_list).pack(
-            side=tk.LEFT
-        )
-
-        tk.Label(controls, text="Year (2022-2522):").pack(side=tk.LEFT)
-        self.year_entry = tk.Entry(controls, width=10)
+        # First row for name entry and action buttons
+        row1 = tk.Frame(self.inner)
+        row1.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(row1, text="Load a csv file, e.g., All_SNFs_Id.csv").pack(side=tk.LEFT)
+        tk.Button(row1, text="Load", command=self.load_list).pack(side=tk.LEFT, padx=10)
+        # Second row for year entry and search button
+        row2 = tk.Frame(self.inner)
+        row2.pack(fill=tk.X, padx=10, pady=(0, 10))
+        tk.Label(row2, text="Year (2022-2522):").pack(side=tk.LEFT)
+        self.year_entry = tk.Entry(row2, width=10)
         self.year_entry.insert(0, "2025")
         self.year_entry.pack(side=tk.LEFT, padx=5)
 
-        tk.Button(controls, text="Output", command=self._on_output).pack(side=tk.LEFT)
-        tk.Checkbutton(controls, text="Save output", variable=self.save_var).pack(
+        tk.Button(row2, text="Output", command=self._on_output).pack(side=tk.LEFT)
+        tk.Checkbutton(row2, text="Save output", variable=self.save_var).pack(
             side=tk.LEFT
         )
 
