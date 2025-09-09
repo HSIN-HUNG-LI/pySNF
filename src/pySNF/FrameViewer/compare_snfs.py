@@ -52,12 +52,12 @@ class CompareSNFsFrame(tk.Frame):
         row = tk.Frame(self.inner)
         row.pack(fill=tk.X, padx=10, pady=10)
 
-        tk.Label(row, text="First SNF ID:").pack(side=tk.LEFT)
+        tk.Label(row, text="1st SNF ID:").pack(side=tk.LEFT)
         self.name_entry = tk.Entry(row, width=20)
         self.name_entry.insert(0, "1C2505")  # Default name
         self.name_entry.pack(side=tk.LEFT, padx=5)
 
-        tk.Label(row, text="First SNF Year (2022-2522):").pack(side=tk.LEFT)
+        tk.Label(row, text="1st SNF Year (2022-2522):").pack(side=tk.LEFT)
         self.year_entry = tk.Entry(row, width=10)
         self.year_entry.insert(0, "2025")    # Default year
         self.year_entry.pack(side=tk.LEFT, padx=5)
@@ -66,12 +66,12 @@ class CompareSNFsFrame(tk.Frame):
         row2 = tk.Frame(self.inner)
         row2.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        tk.Label(row2, text="Second SNF ID:").pack(side=tk.LEFT)
+        tk.Label(row2, text="2nd SNF ID:").pack(side=tk.LEFT)
         self.name_entry2 = tk.Entry(row2, width=20)
         self.name_entry2.insert(0, "1A0137")  # Default name
         self.name_entry2.pack(side=tk.LEFT, padx=5)
 
-        tk.Label(row2, text="Second SNF Year (2022-2522):").pack(side=tk.LEFT)
+        tk.Label(row2, text="2nd SNF Year (2022-2522):").pack(side=tk.LEFT)
         self.year_entry2 = tk.Entry(row2, width=10)
         self.year_entry2.insert(0, "2025")    # Default year
         self.year_entry2.pack(side=tk.LEFT, padx=5)
