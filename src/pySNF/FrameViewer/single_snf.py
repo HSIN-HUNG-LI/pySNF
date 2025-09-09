@@ -97,7 +97,7 @@ class SingleSearchFrame(tk.Frame):
                 "FG(r/s/assy.)",
                 "HG(r/s/kgSS304/MTU)",
             ],
-            title="Source term & Decay Heat",
+            title="Decay Heat & Source Terms",
         )
 
         # --- Weight & Activity side-by-side container ---
