@@ -74,7 +74,7 @@ class MultipleSearchFrame(tk.Frame):
         result_frame.pack_propagate(False)
 
         empty_df = pd.DataFrame(columns=self.cols)
-        self.STDH_df_viewer = DataFrameViewer(result_frame, empty_df, title="Source term & Decay Heat")
+        self.STDH_df_viewer = DataFrameViewer(result_frame, empty_df, title="Decay Heat & Source Terms")
         self.STDH_df_viewer.pack(fill=tk.BOTH, expand=True)
 
         # Treeview visual tweaks
