@@ -117,7 +117,7 @@ def plot_Gram_Ci(
 
     # 1) Prepare time labels
     steps = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500]
-    year_cols = [f"{2022 + y}y" for y in steps]
+    year_cols = [f"{2022 + y}" for y in steps]
 
     # 2) Optional percentage normalization
     if percentage:
