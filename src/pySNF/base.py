@@ -321,7 +321,10 @@ class PredictSNFs_interpolate:
     ) -> None:
         # Copy and rename incoming columns for consistency
         self.grid: pd.DataFrame = grid_df.copy()
-        self.grid.columns = ["Enrich", "SP", "Burnup", "Cool"] + list(output_cols)
+        # Default order according to grid_database.parq 
+        self.grid.columns = ["Enrich", "SP", "Burnup", "Cool"] + list([f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")])
+        # Reset column order with output_cols at the end
+        self.grid.reindex(columns=["Enrich", "SP", "Burnup", "Cool"] + list(output_cols))
 
         # Normalize dtypes & precision on all four axes
         for col in ("Enrich", "SP", "Burnup"):
