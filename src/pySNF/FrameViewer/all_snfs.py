@@ -165,7 +165,7 @@ class AllSNFsFrame(tk.Frame):
             "highlight", font=("TkDefaultFont", 10, "bold", "underline")
         )
         self.multi_text.insert(
-            "1.0", f"From ~/{self.df_path} \nRead excel file and Load "
+            "1.0", f"From ~ {self.df_path} \nRead CSV file and Load "
         )
         self.multi_text.insert(tk.END, str(self.n_snfs), "highlight")
         self.multi_text.insert(
