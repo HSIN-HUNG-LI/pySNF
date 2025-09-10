@@ -40,7 +40,7 @@ def plot_4x4_scatterplot(
     # Configurable parameters
     # -----------------------------
 
-    x_vars = ["Enrich", "SP", "Burnup", "Cool"]
+    x_vars = [ "Burnup", "Cool", "Enrich", "SP"]
 
     # Central font-size config (increase/decrease here)
     FS = {
@@ -57,10 +57,10 @@ def plot_4x4_scatterplot(
         Y_LABEL_MAP[y] = label
 
     X_LABEL_MAP = {
-        "Enrich": "Enrichment (%U235)",
-        "SP": "Specific Power (MW)",
         "Burnup": "Burnup (MWd/MTU)",
         "Cool": "Cooling time (Year)",
+        "Enrich": "Enrichment (%U235)",
+        "SP": "Specific Power (MW)",
     }
 
     MARKER_SIZE = 16  # scatter marker size
@@ -221,7 +221,7 @@ def plot_stdh_RelativeError_boxplots(
     df_error_matrix = compute_relative_errors(df, ERROR_METRICS)
 
     # Columns to plot (expected to exist in df_error_matrix)
-    stdh_metrics = ["DH", "FN", "HG", "FG"]
+    stdh_metrics = ["DH", "FN", "FG", "HG"]
     error_cols = [f"error_{m}" for m in stdh_metrics]
 
     # Validate presence of required columns early with a clear error
