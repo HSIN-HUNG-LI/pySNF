@@ -36,8 +36,8 @@ class PredictionFrame(tk.Frame):
         "s/n",
         "DH (W/assy.)",
         "FN (n/s/assy.)",
-        "HG (r/s/kgSS304/MTU)",
         "FG (r/s/assy.)",
+        "HG (r/s/kgSS304/MTU)",
     ]
 
     # Required input features/order
@@ -368,7 +368,7 @@ class PredictionFrame(tk.Frame):
         cool_space_raw = np.logspace(-5.75, 6.215, 150, base=math.e)
         cool_space = cool_space_raw[1::cool_factor]
 
-        out_cols = [f"{p}_prediction" for p in ("DH", "FN", "HG", "FG")]
+        out_cols = [f"{p}_prediction" for p in ("DH", "FN", "FG", "HG")]
         series_list: list[pd.Series] = []
 
         # Copy and select required columns (order matters for downstream code)
@@ -400,6 +400,7 @@ class PredictionFrame(tk.Frame):
         # Build predictions DataFrame and the 100-row preview (formatted)
         df_preds = pd.DataFrame(series_list)
         df_display = pd.DataFrame([ser.map(self._format) for ser in series_list[:100]])
+        print(f"Preview of predictions:\n{df_display}")
         df_display.insert(0, "S/n", range(1, len(df_display) + 1))
 
         # Update preview table
