@@ -256,10 +256,10 @@ class PredictionFrame(tk.Frame):
         or None (and shows an error) if any value is invalid.
         """
         fields = {
-            "Enrich": self.enrich_entry,
-            "SP": self.sp_entry,
             "Burnup": self.burnup_entry,
             "Cool": self.year_entry,
+            "Enrich": self.enrich_entry,
+            "SP": self.sp_entry,
         }
         data: dict[str, float] = {}
         for name, widget in fields.items():
@@ -294,7 +294,7 @@ class PredictionFrame(tk.Frame):
             "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
         )
         output_fig = output_pred / "SNFs_dataset.png"
-        y_vars = ["DH_0y", "FN_0y", "HG_0y", "FG_0y"]
+        y_vars = ["DH_0y", "FN_0y", "FG_0y", "HG_0y"]
         plot_4x4_scatterplot(output_fig, df_stdh, y_vars, plot_title_dataset)
 
         # Prediction plots
@@ -303,17 +303,17 @@ class PredictionFrame(tk.Frame):
         y_vars_pred = [
             "DH_prediction",
             "FN_prediction",
-            "HG_prediction",
             "FG_prediction",
+            "HG_prediction",
         ]
         plot_4x4_scatterplot(output_fig_pred, df_stdh, y_vars_pred, plot_title_pred)
 
         # Relative error boxplots
         self.error_metrics_ColName = [
+            ("DH", "DH_0y", "DH_prediction"),
             ("FN", "FN_0y", "FN_prediction"),
             ("FG", "FG_0y", "FG_prediction"),
             ("HG", "HG_0y", "HG_prediction"),
-            ("DH", "DH_0y", "DH_prediction"),
         ]
         title_boxplot = "[Prediction / Dataset] Error of Decay Heat & Source Terms"
         RelativeError_save_path = output_pred / "SNFs_comparsion.png"
