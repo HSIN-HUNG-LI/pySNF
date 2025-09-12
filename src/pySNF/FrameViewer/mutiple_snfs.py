@@ -54,7 +54,7 @@ class MultipleSearchFrame(tk.Frame):
         self.name_entry = tk.Entry(row1, width=20)
         self.name_entry.insert(0, "1C2505")  # Default SNF name
         self.name_entry.pack(side=tk.LEFT, padx=5)
-        tk.Button(row1, text="Add", command=self.add_multiple).pack(side=tk.LEFT)
+        tk.Button(row1, text="Add", command=self.add_multiple).pack(side=tk.LEFT, padx=5)
         tk.Button(row1, text="Delete", command=self.delete_multiple).pack(side=tk.LEFT, padx=5)
         tk.Button(row1, text="Clear All", command=self.clear_all).pack(side=tk.LEFT, padx=5)
         tk.Label(row1, text="OR").pack(side=tk.LEFT, padx=(10, 0))
