@@ -55,12 +55,12 @@ class CompareSNFsFrame(tk.Frame):
         tk.Label(row, text="1st SNF ID:").pack(side=tk.LEFT)
         self.name_entry = tk.Entry(row, width=20)
         self.name_entry.insert(0, "1C2505")  # Default name
-        self.name_entry.pack(side=tk.LEFT, padx=5)
+        self.name_entry.pack(side=tk.LEFT, padx=(10, 5))
 
         tk.Label(row, text="1st SNF Year (2022-2522):").pack(side=tk.LEFT)
         self.year_entry = tk.Entry(row, width=10)
         self.year_entry.insert(0, "2025")    # Default year
-        self.year_entry.pack(side=tk.LEFT, padx=5)
+        self.year_entry.pack(side=tk.LEFT, padx=(10, 5))
 
         # --- Input row (second SNF) ---
         row2 = tk.Frame(self.inner)
@@ -91,10 +91,10 @@ class CompareSNFsFrame(tk.Frame):
             height=150,
             columns=[
                 "SNF_id",
-                "DH(Watts/assy.)",
-                "FN(n/s/assy.)",
-                "FG(r/s/assy.)",
-                "HG(r/s/kgSS304/MTU)",
+                "DH (W/assy.)",
+                "FN (n/s/assy.)",
+                "FG (r/s/assy.)",
+                "HG (r/s/kgSS304/MTU)",
             ],
             title="Decay Heat & Source Terms",
         )
