@@ -1,7 +1,8 @@
 import sys
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Optional
 
 import pandas as pd
 from tkinter import messagebox
@@ -16,10 +17,10 @@ def get_stdh_path() -> Path:
     Return the absolute path to the aggregated STDH dataset CSV.
 
     The path is resolved relative to the repository root:
-    <root>/data/DataBase_SNFs/all_stdh_dataset.csv
+    <root>/data/DataBase_SNFs/DataBase_All_DHST.csv
     """
     project_root = Path(__file__).resolve().parents[2]
-    return project_root / "data" / "DataBase_SNFs" / "all_stdh_dataset.csv"
+    return project_root / "data" / "DataBase_SNFs" / "DataBase_All_DHST.csv"
 
 
 def get_snfs_dir_path() -> Path:
@@ -49,15 +50,17 @@ def get_grid_ParqFile_path() -> Path:
     Return the absolute path to the grid Parquet file used by prediction.
     """
     project_root = Path(__file__).resolve().parents[2]
-    return project_root / "data" / "DataBase_Grid" / f"grid_database.parq"
+    parq_name = get_parq_name( project_root / "data" / "DataBase_Grid" / "Default_DataBase_README.txt")
+    return project_root / "data" / "DataBase_Grid" / parq_name
 
 
 def get_grid_space() -> str:
     """
     Return the grid space identifier used in the application.
     """
-    GRID_SPACE = "1412"
-    return str(GRID_SPACE)
+    project_root = Path(__file__).resolve().parents[2]
+    parq_name = get_parq_name( project_root / "data" / "DataBase_Grid" / "Default_DataBase_README.txt")
+    return str(extract_last_four_digits(parq_name))
 
 
 def load_dataset(file_path: Path) -> pd.DataFrame:
@@ -161,6 +164,85 @@ def write_excel(
         df_conc.to_excel(writer, sheet_name="Concentration", index=False)
         df_act.to_excel(writer, sheet_name="Activity", index=False)
 
+def extract_last_four_digits(filename: str) -> Optional[str]:
+    """
+    Extract the last 4 consecutive digits before the file extension
+    from a given filename string.
+    
+    Parameters
+    ----------
+    filename : str
+        Input string, e.g., 'grid_database_1111.parq'.
+    
+    Returns
+    -------
+    Optional[str]
+        A 4-digit string (e.g., '1111') if found, else None.
+    
+    Examples
+    --------
+    >>> extract_last_four_digits("grid_database_1111.parq")
+    '1111'
+    >>> extract_last_four_digits("grid_database_999.parq")
+    None
+    >>> extract_last_four_digits("data/grid_database_1412.parq")
+    '1412'
+    """
+    match = re.search(r"(\d{4})(?=\.\w+$)", filename)
+    if match:
+        return match.group(1)
+    return None
+
+def get_parq_name(
+    readme_path: Path = Path("Default_DataBase_README.txt"),
+) -> str:
+    """
+    Parse `Default_DataBase_README.txt` to locate the FIRST usable `.parq` entry.
+
+    Parameters
+    ----------
+    readme_path : Path
+        Path to the README text file.
+
+    Returns
+    -------
+    str
+        Basename of the discovered .parq file (e.g., 'grid_database_1111.parq').
+
+    Examples
+    --------
+    # Default_DataBase_README.txt
+    # Lines starting with '#' are comments
+    """
+    if not readme_path.exists():
+        raise FileNotFoundError(f"README file not found: {readme_path.resolve()}")
+
+    with readme_path.open("r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+
+            # Skip comments and blanks
+            if not line or line.startswith("#"):
+                continue
+
+            # Accept the first token that ends with '.parq' (case-insensitive)
+            # Split on whitespace to be tolerant of trailing notes
+            tokens = line.split()
+            # Check tokens from left to right; most users will put the path/filename first
+            for tok in tokens:
+                if tok.lower().endswith(".parq"):
+                    parq_path = Path(tok)
+                    # Return only the basename, per requirement (e.g., 'grid_database_1111.parq')
+                    result = parq_path.name
+                    # Optional: print for visibility/debugging
+                    print(f"Selected .parq entry: {result}")
+                    print(f"Resolved path (if relative): {(parq_path if parq_path.is_absolute() else (readme_path.parent / parq_path)).resolve()}")
+                    return result
+
+    raise ValueError(
+        "No valid '.parq' entry found in README. "
+        "Ensure there is at least one non-comment line ending with '.parq'."
+    )
 
 def set_SNFdetail_info(option: int = 1) -> List[str]:
     """
