@@ -108,7 +108,7 @@ class PredictionFrame(tk.Frame):
         ).pack(side=tk.LEFT)
         tk.Label(
             row0,
-            text="A case study by comparing the pySNF predictions with the TRITON calculations for a large numbers of SNFs",
+            text="A case study by comparing the pySNF predictions with the TRITON calculations for a selected set of SNFs",
         ).pack(side=tk.LEFT)
         row0_1 = tk.Frame(self.inner)
         row0_1.pack(fill=tk.X, padx=10, pady=(0, 10))
@@ -133,7 +133,7 @@ class PredictionFrame(tk.Frame):
         row1_1 = tk.Frame(self.inner)
         row1_1.pack(fill=tk.X, padx=10, pady=(0, 10))
         tk.Label(
-            row1_1, text="(1) SNF spec: Bp & Ct are required, En & Sp are optional"
+            row1_1, text="(1) SNF spec: Enter the following information (Bp & Ct are required, En & Sp are optional.)  OR"
         ).pack(side=tk.LEFT)
         row1_2 = tk.Frame(self.inner)
         row1_2.pack(fill=tk.X, padx=10, pady=(0, 10))
@@ -400,7 +400,6 @@ class PredictionFrame(tk.Frame):
         # Build predictions DataFrame and the 100-row preview (formatted)
         df_preds = pd.DataFrame(series_list)
         df_display = pd.DataFrame([ser.map(self._format) for ser in series_list[:100]])
-        print(f"Preview of predictions:\n{df_display}")
         df_display.insert(0, "S/n", range(1, len(df_display) + 1))
 
         # Update preview table
