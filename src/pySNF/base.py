@@ -4,9 +4,11 @@ from typing import Sequence, Tuple, Union, Optional
 
 import numpy as np
 import pandas as pd
-
+import math
 from utils import plot_Gram_Ci, Converter_MTU2ASSY
-from io_file import create_output_dir, get_snfs_dir_path, get_stdh_path
+from io_file import (
+    create_output_dir, get_grid_space, get_snfs_dir_path, get_stdh_path, get_grid_ParqFile_path
+)
 
 
 class SNFProcessor:
@@ -462,3 +464,34 @@ class PredictSNFs_interpolate:
         final = self._linear_interpolate(e0, e1, interp_sp[0], interp_sp[1], self.enrichment)
 
         return pd.Series(final, index=self.output_cols)
+
+def run_PredAssy() -> PredictSNFs_interpolate:
+
+    grid_data: pd.DataFrame = pd.read_parquet(get_grid_ParqFile_path())
+    grid_space = get_grid_space()  # e.g. "1412"
+    enrich_factor = int(grid_space[0])
+    sp_factor = int(grid_space[1])
+    bp_factor = int(grid_space[2])
+    cool_factor = int(grid_space[3])
+
+    enrich_space = np.arange(1.5, 6.1, 0.5)
+    enrich_space = enrich_space[0::enrich_factor]
+    sp_space = np.arange(5, 46, 5)
+    sp_space = sp_space[0::sp_factor]
+    burnup_space = np.arange(5000, 74100, 3000)
+    burnup_space = burnup_space[0::bp_factor]
+    cool_space_raw = np.logspace(-5.75, 6.215, 150, base=math.e)
+    cool_space = cool_space_raw[1::cool_factor]
+
+    out_cols = [f"{p}_prediction" for p in ("DH", "FN", "FG", "HG")]
+
+    # Interpolator
+    PredAssy = PredictSNFs_interpolate(
+        grid_data,
+        enrich_space,
+        sp_space,
+        burnup_space,
+        cool_space,
+        out_cols,
+    )
+    return PredAssy
