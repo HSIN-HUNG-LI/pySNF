@@ -20,7 +20,7 @@ def get_stdh_path() -> Path:
     <root>/data/DataBase_SNFs/DataBase_All_DHST.csv
     """
     project_root = Path(__file__).resolve().parents[2]
-    return project_root / "data" / "DataBase_SNFs" / "DataBase_All_DHST_test.csv"
+    return project_root / "data" / "DataBase_SNFs" / "DataBase_All_DHST.csv"
 
 
 def get_snfs_dir_path() -> Path:
@@ -61,16 +61,6 @@ def get_grid_space() -> str:
     project_root = Path(__file__).resolve().parents[2]
     parq_name = get_parq_name( project_root / "data" / "DataBase_Grid" / "Default_DataBase_README.txt")
     return str(extract_last_four_digits(parq_name))
-
-def get_verification_path() -> Path:
-    """
-    Return the absolute path to the verification dataset CSV.
-
-    The path is resolved relative to the repository root:
-    <root>/data/DataBase_SNFs/DataBase_All_DHST.csv
-    """
-    project_root = Path(__file__).resolve().parents[2]
-    return project_root / "data" / "TEST_prediction" / "DataBase_All_DHST_test.csv"
 
 def load_dataset(file_path: Path) -> pd.DataFrame:
     """
