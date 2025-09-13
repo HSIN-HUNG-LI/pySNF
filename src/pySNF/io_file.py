@@ -20,7 +20,7 @@ def get_stdh_path() -> Path:
     <root>/data/DataBase_SNFs/DataBase_All_DHST.csv
     """
     project_root = Path(__file__).resolve().parents[2]
-    return project_root / "data" / "DataBase_SNFs" / "DataBase_All_DHST.csv"
+    return project_root / "data" / "DataBase_SNFs" / "DataBase_All_DHST_test.csv"
 
 
 def get_snfs_dir_path() -> Path:
@@ -62,6 +62,15 @@ def get_grid_space() -> str:
     parq_name = get_parq_name( project_root / "data" / "DataBase_Grid" / "Default_DataBase_README.txt")
     return str(extract_last_four_digits(parq_name))
 
+def get_verification_path() -> Path:
+    """
+    Return the absolute path to the verification dataset CSV.
+
+    The path is resolved relative to the repository root:
+    <root>/data/DataBase_SNFs/DataBase_All_DHST.csv
+    """
+    project_root = Path(__file__).resolve().parents[2]
+    return project_root / "data" / "TEST_prediction" / "DataBase_All_DHST_test.csv"
 
 def load_dataset(file_path: Path) -> pd.DataFrame:
     """
@@ -234,9 +243,6 @@ def get_parq_name(
                     parq_path = Path(tok)
                     # Return only the basename, per requirement (e.g., 'grid_database_1111.parq')
                     result = parq_path.name
-                    # Optional: print for visibility/debugging
-                    print(f"Selected .parq entry: {result}")
-                    print(f"Resolved path (if relative): {(parq_path if parq_path.is_absolute() else (readme_path.parent / parq_path)).resolve()}")
                     return result
 
     raise ValueError(
