@@ -2,11 +2,12 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import seaborn as sns
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import matplotlib.ticker as mticker
 from typing import Optional
-
+matplotlib.use("Agg") 
 
 def plot_4x4_scatterplot(
     output_path: Path, df: pd.DataFrame, y_vars: list[str], plot_title: str
@@ -77,7 +78,6 @@ def plot_4x4_scatterplot(
     # Load & prepare data
     # -----------------------------
     use_cols = x_vars + y_vars + ["Type"]
-    # df = pd.read_csv(CSV_PATH, usecols=use_cols)
 
     # Enforce numeric dtypes and category for 'Type'
     for c in x_vars + y_vars:
