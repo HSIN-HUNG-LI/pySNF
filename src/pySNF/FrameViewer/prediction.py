@@ -1,24 +1,21 @@
 import threading
 import time
-import math
 import tkinter as tk
 from tkinter import messagebox, filedialog
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, List, Tuple
 
 import numpy as np
 import pandas as pd
 
-from base import PredictSNFs_interpolate
+from base import run_PredAssy
 from FrameViewer.BaseFrame import DataFrameViewer
 from visualize import plot_4x4_scatterplot, plot_stdh_RelativeError_boxplots
 from io_file import (
     load_dataset,
     save_PredData,
-    get_grid_ParqFile_path,
     get_stdh_path,
     create_output_dir,
-    get_grid_space,
 )
 
 
@@ -47,13 +44,15 @@ class PredictionFrame(tk.Frame):
         super().__init__(parent, *args, **kwargs)
 
         # Persistent state
-        self.grid_data: pd.DataFrame = pd.read_parquet(get_grid_ParqFile_path())
+        self.PredAssy = run_PredAssy()
+        self.database_stdh = pd.read_csv(get_stdh_path())
         self.save_var = tk.BooleanVar(value=True)
         self._running: bool = False
 
         # Attributes initialized for safety (avoid AttributeError in edge paths)
         self.df_in: Optional[pd.DataFrame] = None
         self.df_in_copy: Optional[pd.DataFrame] = None
+        self.df_verify_result: pd.DataFrame = pd.DataFrame()
         self.df_path: Optional[Path] = None
         self.n_snfs: int = 0
         self._dlg: Optional[tk.Toplevel] = None
@@ -108,11 +107,11 @@ class PredictionFrame(tk.Frame):
         ).pack(side=tk.LEFT)
         tk.Label(
             row0,
-            text="A case study by comparing the pySNF predictions with the TRITON calculations for a selected set of SNFs",
+            text="A case study by comparing the pySNF predictions with the TRITON calculations for a selected set of SNFs.",
         ).pack(side=tk.LEFT)
         row0_1 = tk.Frame(self.inner)
         row0_1.pack(fill=tk.X, padx=10, pady=(0, 10))
-        tk.Button(row0_1, text="Run Test Case", command=self._verification).pack(
+        tk.Button(row0_1, text="Run Test Case", command=self.verification).pack(
             side=tk.LEFT
         )
         tk.Label(
@@ -125,7 +124,7 @@ class PredictionFrame(tk.Frame):
         row.pack(fill=tk.X, padx=10, pady=(0, 10))
         tk.Label(
             row,
-            text="Predictions of SNF's Decay Heat & Source Terms",
+            text="Predictions of SNF's Decay Heat & Source Terms:",
             font=("Helvetica", 12, "bold"),
         ).pack(side=tk.LEFT)
 
@@ -281,46 +280,143 @@ class PredictionFrame(tk.Frame):
         self.df_in = df_in
         self.run_prediction()
 
-    def _verification(self) -> None:
+    # ────────────────────────────────────────────────────────────────────────
+    # Verification & Prediction logic
+    # ────────────────────────────────────────────────────────────────────────
+    def _validate_required_columns(self, df: pd.DataFrame, required_cols: List[str]) -> pd.DataFrame:
         """
-        Generate verification plots (dataset/prediction distributions and
-        relative error boxplots) into Prediction/verification.
+        Ensure `df` contains every column in `required_cols`. Raise a clear error if not.
+        Returns a *column-filtered* copy with only the required columns, preserving order.
         """
-        output_pred = create_output_dir("Prediction/verification")
-        df_stdh = pd.read_csv(get_stdh_path())
+        missing = [c for c in required_cols if c not in df.columns]
+        if missing:
+            raise ValueError(f"The following required columns are missing from DataFrame: {missing}")
+        return df[required_cols].copy()
 
-        # Dataset plots
-        plot_title_dataset = (
-            "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
-        )
-        output_fig = output_pred / "SNFs_dataset.png"
-        y_vars = ["DH_0y", "FN_0y", "FG_0y", "HG_0y"]
-        plot_4x4_scatterplot(output_fig, df_stdh, y_vars, plot_title_dataset)
 
-        # Prediction plots
+    def _build_verification_results(
+        self,
+        df_stdh_req: pd.DataFrame,
+        interpolate_fn,
+    ) -> pd.DataFrame:
+        """
+        Run the provided `interpolate_fn(enrich, burnup, sp, cool)` for each row in `df_stdh_req`
+        and return a DataFrame of prediction series.
+        """
+        # Use itertuples for readability + speed; column names accessed as attributes.
+        ver_series_list: list[pd.Series] = []
+        for row in df_stdh_req.itertuples(index=False):
+            ver_series_list.append(
+                interpolate_fn(
+                    row.Enrich,   # type: ignore[attr-defined]
+                    row.Burnup,   # type: ignore[attr-defined]
+                    row.SP,       # type: ignore[attr-defined]
+                    row.Cool,     # type: ignore[attr-defined]
+                )
+            )
+        return pd.DataFrame(ver_series_list)
+
+
+    def _make_scatter_plots(
+        self,
+        df_for_plots: pd.DataFrame,
+        y_vars_dataset: List[str],
+        y_vars_prediction: List[str],
+        out_dir: Path,
+    ) -> None:
+        """
+        Produce the dataset and prediction scatter plots (4×4).
+        """
+        # [SNFs dataset]
+        plot_title_dataset = "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
+        output_fig_dataset = out_dir / "SNFs_dataset.png"
+        plot_4x4_scatterplot(output_fig_dataset, df_for_plots, y_vars_dataset, plot_title_dataset)
+
+        # [Prediction]
         plot_title_pred = "[Prediction] Targets vs. Fuel Parameters — Colored by Type"
-        output_fig_pred = output_pred / "SNFs_prediction.png"
-        y_vars_pred = [
-            "DH_prediction",
-            "FN_prediction",
-            "FG_prediction",
-            "HG_prediction",
-        ]
-        plot_4x4_scatterplot(output_fig_pred, df_stdh, y_vars_pred, plot_title_pred)
+        output_fig_pred = out_dir / "SNFs_prediction.png"
+        plot_4x4_scatterplot(output_fig_pred, df_for_plots, y_vars_prediction, plot_title_pred)
 
-        # Relative error boxplots
+
+    def _make_error_boxplots(
+        self,
+        df_for_errors: pd.DataFrame,
+        error_metrics_colname: List[Tuple[str, str, str]],
+        out_dir: Path,
+    ) -> None:
+        """
+        Produce relative error boxplots comparing dataset vs. prediction.
+        """
+        title_boxplot = "[Prediction / Dataset] Error of Decay Heat & Source Terms"
+        save_path = out_dir / "SNFs_comparsion.png"
+        plot_stdh_RelativeError_boxplots(df_for_errors, error_metrics_colname, title_boxplot, save_path)
+
+
+    def _verify_test_case(self) -> None:
+        """
+        Run a test case with known inputs and outputs to verify the prediction model.
+        """
+        # --- Paths & constants 
+        output_dir = create_output_dir("Prediction/verification")
+
+        X_VARS = ["Burnup", "Cool", "Enrich", "SP"]
+        Y_VARS = ["DH_0y", "FN_0y", "FG_0y", "HG_0y"]
+        PLOT_VARS = ["Type"]  # for coloring
+        REQUIRED_COLS = X_VARS + Y_VARS + PLOT_VARS
+
+        # Validate inputs and subset columns 
+        df_stdh = self._validate_required_columns(self.database_stdh.copy(), REQUIRED_COLS)
+
+        # Dataset plot (ground truth vs parameters) 
+        #    (This uses only the validated subset.)
+        plot_title_dataset = "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
+        output_fig = output_dir / "SNFs_dataset.png"
+        plot_4x4_scatterplot(output_fig, df_stdh, Y_VARS, plot_title_dataset)
+
+        # Run verification predictions row-by-row 
+        df_verify_result = self._build_verification_results(df_stdh, self.PredAssy.interpolate)
+
+        # Concatenate side-by-side keeping column names (axis=1).  The original code
+        df_merged = pd.concat([df_stdh.reset_index(drop=True), df_verify_result.reset_index(drop=True)], axis=1)
+
+        # Prediction scatter plots 
+        self._make_scatter_plots(
+            df_for_plots=df_merged,
+            y_vars_dataset=Y_VARS,
+            y_vars_prediction=["DH_prediction", "FN_prediction", "FG_prediction", "HG_prediction"],
+            out_dir=output_dir,
+        )
+
+        # Relative error boxplots 
         self.error_metrics_ColName = [
             ("DH", "DH_0y", "DH_prediction"),
             ("FN", "FN_0y", "FN_prediction"),
             ("FG", "FG_0y", "FG_prediction"),
             ("HG", "HG_0y", "HG_prediction"),
         ]
-        title_boxplot = "[Prediction / Dataset] Error of Decay Heat & Source Terms"
-        RelativeError_save_path = output_pred / "SNFs_comparsion.png"
-        plot_stdh_RelativeError_boxplots(
-            df_stdh, self.error_metrics_ColName, title_boxplot, RelativeError_save_path
-        )
+        self._make_error_boxplots(df_merged, self.error_metrics_ColName, output_dir)
 
+        # Cleanup dialog / flags 
+        self._running = False
+        if self._dlg is not None and self._dlg.winfo_exists():
+            self._dlg.destroy()
+
+
+    def verification(self) -> None:
+        """
+        Public entrypoint to run the verification workflow in a background thread.
+        Spawns a daemon thread and shows a simple running dialog (same behavior as before).
+        """
+        self._running = True
+        self._show_running_dialog()
+        self.n_snfs = len(self.database_stdh)
+
+        # Keep threading behavior identical to original.
+        threading.Thread(target=self._verify_test_case, args=(), daemon=True).start()
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Actions for batch prediction
+    # ────────────────────────────────────────────────────────────────────────
     def load_list(self) -> None:
         """Load a batch of SNF specs from an Excel/CSV file and start prediction."""
         # Capture the raw path first to correctly detect cancellation
@@ -330,7 +426,6 @@ class PredictionFrame(tk.Frame):
         if not path_str:
             messagebox.showerror("Error", "No valid Path.")
             return
-
         self.df_path = Path(path_str)
         self.df_in = load_dataset(self.df_path)
         if self.df_in.empty:
@@ -351,45 +446,17 @@ class PredictionFrame(tk.Frame):
         if self.df_in is None or self.df_in.empty:
             messagebox.showerror("Error", "Dataset empty.")
             return
-        # Define interpolation spaces
-        grid_data = self.grid_data
-        grid_space = get_grid_space()  # e.g. "1412"
-        enrich_factor = int(grid_space[0])
-        sp_factor = int(grid_space[1])
-        bp_factor = int(grid_space[2])
-        cool_factor = int(grid_space[3])
-
-        enrich_space = np.arange(1.5, 6.1, 0.5)
-        enrich_space = enrich_space[0::enrich_factor]
-        sp_space = np.arange(5, 46, 5)
-        sp_space = sp_space[0::sp_factor]
-        burnup_space = np.arange(5000, 74100, 3000)
-        burnup_space = burnup_space[0::bp_factor]
-        cool_space_raw = np.logspace(-5.75, 6.215, 150, base=math.e)
-        cool_space = cool_space_raw[1::cool_factor]
-
-        out_cols = [f"{p}_prediction" for p in ("DH", "FN", "FG", "HG")]
         series_list: list[pd.Series] = []
 
         # Copy and select required columns (order matters for downstream code)
         self.df_in_copy = self.df_in.copy()
         desired_cols = ["Enrich", "SP", "Burnup", "Cool"]
-        self.df_in_copy = self.df_in_copy.loc[:, desired_cols].copy()
-
-        # Interpolator
-        PredAssy = PredictSNFs_interpolate(
-            grid_data,
-            enrich_space,
-            sp_space,
-            burnup_space,
-            cool_space,
-            out_cols,
-        )
+        self.df_in_copy = self.df_in_copy[desired_cols]
 
         # Predict each row
         for _, row in self.df_in_copy.iterrows():
             series_list.append(
-                PredAssy.interpolate(
+                self.PredAssy.interpolate(
                     row["Enrich"],
                     row["Burnup"],
                     row["SP"],
