@@ -13,7 +13,7 @@ from base import PredictSNFs_interpolate
 from io_file import (
     load_dataset,
     get_grid_ParqFile_path,
-    get_stdh_path,
+    get_dhst_path,
     get_output_dir_path,
 )
 
@@ -24,7 +24,7 @@ class GridResolutionExperiment:
     def __init__(self):
         # Load grid‐interpolation data and standard dataset
         self.grid_data = pd.read_parquet(get_grid_ParqFile_path())
-        self.df_in = load_dataset(get_stdh_path())
+        self.df_in = load_dataset(get_dhst_path())
         # self.df_in = self.df_in.copy().head(100)
 
         # Define metrics: (label, Triton col, grid col, y‐axis limits)
