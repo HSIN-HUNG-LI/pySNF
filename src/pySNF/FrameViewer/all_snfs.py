@@ -15,7 +15,7 @@ from io_file import load_dataset, create_output_dir, write_excel
 
 class AllSNFsFrame(tk.Frame):
     """
-    Load a list of SNF IDs, compute aggregate Source Term & Decay Heat (STDH),
+    Load a list of SNF IDs, compute aggregate Source Term & Decay Heat (DHST),
     nuclide mass (grams), and activity (Ci), and display the results
     in scrollable panels. Allows optional export to an Excel workbook.
     """
@@ -38,7 +38,7 @@ class AllSNFsFrame(tk.Frame):
         self.df_path: Optional[Path] = None
         self.n_snfs: int = 0
 
-        # Column names for the STDH totals table
+        # Column names for the DHST totals table
         self.cols_all = [
             "DH (W/all)",
             "FN (n/s/all)",
@@ -83,7 +83,7 @@ class AllSNFsFrame(tk.Frame):
         self.multi_text.pack(fill=tk.X, padx=10)
 
         # Data viewers
-        self.STDH_viewer = self._make_viewer(
+        self.DHST_viewer = self._make_viewer(
             parent=self.inner,
             height=150,
             columns=self.cols_all,
@@ -270,11 +270,11 @@ class AllSNFsFrame(tk.Frame):
     # ──────────────────────────────────────────────────────────────────────────
     def _run_search_all(self, year: int) -> None:
         """
-        Compute totals for STDH and the top-20 nuclides by mass (grams) and activity (Ci),
+        Compute totals for DHST and the top-20 nuclides by mass (grams) and activity (Ci),
         aggregated across all SNFs in `self.df`.
         """
         # Accumulators
-        stdh_totals: dict[str, float] = dict.fromkeys(self.cols_all, 0.0)
+        dhst_totals: dict[str, float] = dict.fromkeys(self.cols_all, 0.0)
         gram_totals: defaultdict[str, float] = defaultdict(float)
         ci_totals: defaultdict[str, float] = defaultdict(float)
 
@@ -285,12 +285,12 @@ class AllSNFsFrame(tk.Frame):
 
             proc = SNFProcessor(series_name=name, target_year=year)
 
-            # STDH totals
-            df_stdh = proc.compute_stdh()
-            df_stdh.columns = self.cols_all
+            # DHST totals
+            df_dhst = proc.compute_dhst()
+            df_dhst.columns = self.cols_all
             for key in self.cols_all:
-                stdh_totals[key] += (
-                    pd.to_numeric(df_stdh.get(key, pd.Series()), errors="coerce")
+                dhst_totals[key] += (
+                    pd.to_numeric(df_dhst.get(key, pd.Series()), errors="coerce")
                     .fillna(0)
                     .sum()
                 )
@@ -308,7 +308,7 @@ class AllSNFsFrame(tk.Frame):
         if self.save_var.get():
             output_dir = create_output_dir(parent_folder_name="Results_All_SNFs")
 
-            df_stdh_tot = pd.DataFrame([stdh_totals], columns=self.cols_all)
+            df_dhst_tot = pd.DataFrame([dhst_totals], columns=self.cols_all)
             df_gram_tot = pd.DataFrame(
                 sorted(gram_totals.items(), key=itemgetter(1), reverse=True),
                 columns=["nuclide", "gram/all"],
@@ -319,11 +319,11 @@ class AllSNFsFrame(tk.Frame):
             )
 
             file_name = f"All_SNFs_{year}"
-            write_excel(df_stdh_tot, df_ci_tot, df_gram_tot, output_dir, file_name)
+            write_excel(df_dhst_tot, df_ci_tot, df_gram_tot, output_dir, file_name)
 
         # Push results to UI on the main thread
         self.after(
-            0, lambda: self._display_results(stdh_totals, gram_totals, ci_totals)
+            0, lambda: self._display_results(dhst_totals, gram_totals, ci_totals)
         )
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -331,7 +331,7 @@ class AllSNFsFrame(tk.Frame):
     # ──────────────────────────────────────────────────────────────────────────
     def _display_results(
         self,
-        stdh_totals: dict[str, float],
+        dhst_totals: dict[str, float],
         gram_totals: dict[str, float],
         ci_totals: dict[str, float],
     ) -> None:
@@ -340,7 +340,7 @@ class AllSNFsFrame(tk.Frame):
         if self._dlg is not None and self._dlg.winfo_exists():
             self._dlg.destroy()
 
-        self.STDH_viewer.load_dataframe(pd.DataFrame([stdh_totals]))
+        self.DHST_viewer.load_dataframe(pd.DataFrame([dhst_totals]))
         self.Gram_viewer.load_dataframe(
             pd.DataFrame(
                 sorted(gram_totals.items(), key=itemgetter(1), reverse=True),
