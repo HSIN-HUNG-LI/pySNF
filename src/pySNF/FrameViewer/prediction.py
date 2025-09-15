@@ -10,11 +10,11 @@ import pandas as pd
 
 from base import run_PredAssy
 from FrameViewer.BaseFrame import DataFrameViewer
-from visualize import plot_4x4_scatterplot, plot_stdh_RelativeError_boxplots
+from visualize import plot_4x4_scatterplot, plot_dhst_RelativeError_boxplots
 from io_file import (
     load_dataset,
     save_PredData,
-    get_stdh_path,
+    get_dhst_path,
     create_output_dir,
 )
 
@@ -22,7 +22,7 @@ from io_file import (
 class PredictionFrame(tk.Frame):
     """
     Frame to
-    (1) predict Source Term & Decay Heat (ST&DH) from fuel parameters,
+    (1) predict Decay Heat & Source Terms (DH&STs) from fuel parameters,
     (2) preview the results,
     (3) optionally export data/figures, and
     (4) run verification plots against a reference dataset.
@@ -45,7 +45,7 @@ class PredictionFrame(tk.Frame):
 
         # Persistent state
         self.PredAssy = run_PredAssy()
-        self.database_stdh = pd.read_csv(get_stdh_path())
+        self.database_dhst = pd.read_csv(get_dhst_path())
         self.save_var = tk.BooleanVar(value=True)
         self._running: bool = False
 
@@ -151,7 +151,7 @@ class PredictionFrame(tk.Frame):
         self.enrich_entry.insert(0, f"{self.snf_stats['Enrich']}")
         self.enrich_entry.pack(side=tk.LEFT, padx=5)
 
-        tk.Label(row1_2, text="SP (MW):").pack(side=tk.LEFT)
+        tk.Label(row1_2, text="Sp (MW):").pack(side=tk.LEFT)
         self.sp_entry = tk.Entry(row1_2, width=10)
         self.sp_entry.insert(0, f"{self.snf_stats['SP']}")
         self.sp_entry.pack(side=tk.LEFT, padx=5)
@@ -166,12 +166,12 @@ class PredictionFrame(tk.Frame):
         row2.pack(fill=tk.X, padx=10, pady=(0, 10))
         tk.Label(
             row2,
-            text="(2) SNFs Specs: Load a csv file, e.g., Prediction_tsc01_batch.csv",
+            text="(2) SNFs Specs: Load a csv file, e.g., BatchPrediction_TSC01.csv",
         ).pack(side=tk.LEFT)
         tk.Button(row2, text="Load & Output", command=self.load_list).pack(side=tk.LEFT)
 
         # Prediction preview viewer
-        self.STDH_viewer = self._make_viewer(
+        self.DHST_viewer = self._make_viewer(
             parent=self.inner,
             height=300,
             columns=self.cols_all,
@@ -201,8 +201,8 @@ class PredictionFrame(tk.Frame):
     # ────────────────────────────────────────────────────────────────────────
     def _clear_viewers(self) -> None:
         """Clear all rows in the prediction preview tree."""
-        for iid in self.STDH_viewer.tree.get_children():
-            self.STDH_viewer.tree.delete(iid)
+        for iid in self.DHST_viewer.tree.get_children():
+            self.DHST_viewer.tree.delete(iid)
 
     def _insert_rows(self, viewer: DataFrameViewer, df: pd.DataFrame) -> None:
         """Insert DataFrame rows into a viewer."""
@@ -296,16 +296,16 @@ class PredictionFrame(tk.Frame):
 
     def _build_verification_results(
         self,
-        df_stdh_req: pd.DataFrame,
+        df_dhst_req: pd.DataFrame,
         interpolate_fn,
     ) -> pd.DataFrame:
         """
-        Run the provided `interpolate_fn(enrich, burnup, sp, cool)` for each row in `df_stdh_req`
+        Run the provided `interpolate_fn(enrich, burnup, sp, cool)` for each row in `df_dhst_req`
         and return a DataFrame of prediction series.
         """
         # Use itertuples for readability + speed; column names accessed as attributes.
         ver_series_list: list[pd.Series] = []
-        for row in df_stdh_req.itertuples(index=False):
+        for row in df_dhst_req.itertuples(index=False):
             ver_series_list.append(
                 interpolate_fn(
                     row.Enrich,   # type: ignore[attr-defined]
@@ -349,7 +349,7 @@ class PredictionFrame(tk.Frame):
         """
         title_boxplot = "[Prediction / Dataset] Error of Decay Heat & Source Terms"
         save_path = out_dir / "SNFs_comparsion.png"
-        plot_stdh_RelativeError_boxplots(df_for_errors, error_metrics_colname, title_boxplot, save_path)
+        plot_dhst_RelativeError_boxplots(df_for_errors, error_metrics_colname, title_boxplot, save_path)
 
 
     def _verify_test_case(self) -> None:
@@ -365,19 +365,19 @@ class PredictionFrame(tk.Frame):
         REQUIRED_COLS = X_VARS + Y_VARS + PLOT_VARS
 
         # Validate inputs and subset columns 
-        df_stdh = self._validate_required_columns(self.database_stdh.copy(), REQUIRED_COLS)
+        df_dhst = self._validate_required_columns(self.database_dhst.copy(), REQUIRED_COLS)
 
         # Dataset plot (ground truth vs parameters) 
         #    (This uses only the validated subset.)
         plot_title_dataset = "[SNFs dataset] Targets vs. Fuel Parameters — Colored by Type"
         output_fig = output_dir / "SNFs_dataset.png"
-        plot_4x4_scatterplot(output_fig, df_stdh, Y_VARS, plot_title_dataset)
+        plot_4x4_scatterplot(output_fig, df_dhst, Y_VARS, plot_title_dataset)
 
         # Run verification predictions row-by-row 
-        df_verify_result = self._build_verification_results(df_stdh, self.PredAssy.interpolate)
+        df_verify_result = self._build_verification_results(df_dhst, self.PredAssy.interpolate)
 
         # Concatenate side-by-side keeping column names (axis=1).  The original code
-        df_merged = pd.concat([df_stdh.reset_index(drop=True), df_verify_result.reset_index(drop=True)], axis=1)
+        df_merged = pd.concat([df_dhst.reset_index(drop=True), df_verify_result.reset_index(drop=True)], axis=1)
 
         # Prediction scatter plots 
         self._make_scatter_plots(
@@ -409,7 +409,7 @@ class PredictionFrame(tk.Frame):
         """
         self._running = True
         self._show_running_dialog()
-        self.n_snfs = len(self.database_stdh)
+        self.n_snfs = len(self.database_dhst)
 
         # Keep threading behavior identical to original.
         threading.Thread(target=self._verify_test_case, args=(), daemon=True).start()
@@ -471,7 +471,7 @@ class PredictionFrame(tk.Frame):
 
         # Update preview table
         self._clear_viewers()
-        self._insert_rows(self.STDH_viewer, df_display)
+        self._insert_rows(self.DHST_viewer, df_display)
 
         # Stop progress dialog (if shown)
         self._running = False
