@@ -87,8 +87,8 @@ class MultipleSearchFrame(tk.Frame):
         result_frame.pack_propagate(False)
 
         empty_df = pd.DataFrame(columns=self.viewer_cols)
-        self.STDH_df_viewer = DataFrameViewer(result_frame, empty_df, title="Decay Heat & Source Terms")
-        self.STDH_df_viewer.pack(fill=tk.BOTH, expand=True)
+        self.DHST_df_viewer = DataFrameViewer(result_frame, empty_df, title="Decay Heat & Source Terms")
+        self.DHST_df_viewer.pack(fill=tk.BOTH, expand=True)
 
         # Treeview visual tweaks
         self._configure_tree_styles()
@@ -103,9 +103,9 @@ class MultipleSearchFrame(tk.Frame):
         """Configure alternating row styles and a style for summary rows."""
         style = ttk.Style()
         style.configure("Treeview", rowheight=24)  # Optionally adjust row height
-        self.STDH_df_viewer.tree.tag_configure("evenrow", background="#ffffff")
-        self.STDH_df_viewer.tree.tag_configure("oddrow", background="#f0f0f0")
-        self.STDH_df_viewer.tree.tag_configure("summary", foreground="red")
+        self.DHST_df_viewer.tree.tag_configure("evenrow", background="#ffffff")
+        self.DHST_df_viewer.tree.tag_configure("oddrow", background="#f0f0f0")
+        self.DHST_df_viewer.tree.tag_configure("summary", foreground="red")
 
     def _refresh_text(self) -> None:
         """Display current list of names in the text log."""
@@ -200,7 +200,7 @@ class MultipleSearchFrame(tk.Frame):
     # Core: compute, render, export
     # ────────────────────────────────────────────────────────────────────────
     def search_multiple(self) -> None:
-        """Run batch STDH computation and update the viewer (and CSV if enabled)."""
+        """Run batch DHST computation and update the viewer (and CSV if enabled)."""
         # Validate year input (keep float to preserve original behavior)
         try:
             year = float(self.year_entry.get())
@@ -234,22 +234,22 @@ class MultipleSearchFrame(tk.Frame):
                 self._show_error(f"Error during SNF Processor:\n{e}")
                 return
 
-            # Compute STDH DataFrame for this series
-            df_stdh = proc.compute_stdh()
+            # Compute DHST DataFrame for this series
+            df_dhst = proc.compute_dhst()
 
             # Ensure numeric and accumulate per-series totals
             per_name_totals: dict[str, float] = {}
             for col in self.df_cols[1:]:
-                df_stdh[col] = pd.to_numeric(df_stdh[col], errors="coerce")
-                sum_val = df_stdh[col].sum()
+                df_dhst[col] = pd.to_numeric(df_dhst[col], errors="coerce")
+                sum_val = df_dhst[col].sum()
                 grand_totals[col] += sum_val
                 per_name_totals[col] = sum_val
 
             # Store this series' totals for later statistics
             name_summaries.append(per_name_totals)
 
-            # Format each row of df_stdh and prepend the series name
-            disp = df_stdh.round(2).map(lambda x: f"{x:.2e}")
+            # Format each row of df_dhst and prepend the series name
+            disp = df_dhst.round(2).map(lambda x: f"{x:.2e}")
             disp.insert(0, "SNF_id", name)  # matches original behavior/casing
             rows.extend(disp.itertuples(index=False, name=None))
 
@@ -265,7 +265,7 @@ class MultipleSearchFrame(tk.Frame):
             try:
                 out_dir = create_output_dir(parent_folder_name="Results_Multiple_SNFs")
                 pd.DataFrame(rows, columns=self.df_cols).to_csv(
-                    out_dir / "Multiple_STDH_results.csv", index=False
+                    out_dir / "Multiple_DHST_results.csv", index=False
                 )
             except Exception as e:
                 self.multi_text.insert(tk.END, f"Error saving CSV: {e}\n")
@@ -309,7 +309,7 @@ class MultipleSearchFrame(tk.Frame):
 
     def _refresh_tree(self, rows: Iterable[tuple]) -> None:
         """Clear and repopulate the tree with striped rows and summary highlighting."""
-        tree = self.STDH_df_viewer.tree
+        tree = self.DHST_df_viewer.tree
         for item in tree.get_children():
             tree.delete(item)
 
