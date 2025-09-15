@@ -7,14 +7,14 @@ import pandas as pd
 import math
 from utils import plot_Gram_Ci, Converter_MTU2ASSY
 from io_file import (
-    create_output_dir, get_grid_space, get_snfs_dir_path, get_stdh_path, get_grid_ParqFile_path
+    create_output_dir, get_grid_space, get_snfs_dir_path, get_dhst_path, get_grid_ParqFile_path
 )
 
 
 class SNFProcessor:
     """
     Encapsulates logic for a single SNF:
-      • STDH (decay heat & source-term) interpolation across target year
+      • DHST (decay heat & source-term) interpolation across target year
       • Nuclide concentration interpolation (grams per MTU / per assembly)
       • Nuclide activity interpolation (Ci per MTU / per assembly)
       • Writing results to a single Excel workbook
@@ -37,16 +37,16 @@ class SNFProcessor:
         target_year: float,
         method: str = "log10",
         data_dir: Path = get_snfs_dir_path(),
-        st_dataset_path: Path = get_stdh_path(),
+        st_dataset_path: Path = get_dhst_path(),
     ) -> None:
         self.year: float = target_year
         self.method: str = method
         self.SNF_id: str = series_name
 
-        # Load STDH master table and per-SNF per-nuclide tables
-        self.df_STDH_all: pd.DataFrame = pd.read_csv(st_dataset_path, index_col=False)
-        self.df_STDH_filtered: pd.DataFrame = self.df_STDH_all[
-            self.df_STDH_all["SNF_id"] == self.SNF_id
+        # Load DHST master table and per-SNF per-nuclide tables
+        self.df_DHST_all: pd.DataFrame = pd.read_csv(st_dataset_path, index_col=False)
+        self.df_DHST_filtered: pd.DataFrame = self.df_DHST_all[
+            self.df_DHST_all["SNF_id"] == self.SNF_id
         ]
         # Expect one row; keep behavior the same even if >1
         self.data_conc: pd.DataFrame = pd.read_csv(
@@ -123,9 +123,9 @@ class SNFProcessor:
     # ────────────────────────────────────────────────────────────────────────
     # Public computations
     # ────────────────────────────────────────────────────────────────────────
-    def compute_stdh(self) -> pd.DataFrame:
+    def compute_dhst(self) -> pd.DataFrame:
         """
-        Build the one-row STDH table for this SNF at the target year.
+        Build the one-row DHST table for this SNF at the target year.
         Columns are kept identical to the original implementation.
 
         Returns
@@ -143,8 +143,8 @@ class SNFProcessor:
             "HG(r/s/kgSS304/MTU)",
         ]
 
-        # Expect exactly one row in df_STDH_filtered; preserve original behavior
-        df_STDH = pd.DataFrame(columns=cols)
+        # Expect exactly one row in df_DHST_filtered; preserve original behavior
+        df_DHST = pd.DataFrame(columns=cols)
         result_vals: list[str] = []
 
         for label in cols:
@@ -153,19 +153,19 @@ class SNFProcessor:
             lo_col = f"{component}_{self.decay_bounds[0]}y"
             hi_col = f"{component}_{self.decay_bounds[1]}y"
 
-            lo = self.df_STDH_filtered[lo_col].values[0]
-            hi = self.df_STDH_filtered[hi_col].values[0]
+            lo = self.df_DHST_filtered[lo_col].values[0]
+            hi = self.df_DHST_filtered[hi_col].values[0]
 
             val = self.interpolate(self.year, lo, hi, self.decay_bounds, self.method)
 
             # Convert MTU → assy except for HG (kept identical to original logic)
             if component != "HG":
-                val = Converter_MTU2ASSY(val, self.df_STDH_filtered)
+                val = Converter_MTU2ASSY(val, self.df_DHST_filtered)
 
             result_vals.append(f"{val:.3e}")
 
-        df_STDH.loc[len(df_STDH)] = result_vals
-        return df_STDH
+        df_DHST.loc[len(df_DHST)] = result_vals
+        return df_DHST
 
     def compute_concentration(self) -> pd.DataFrame:
         """
@@ -180,7 +180,7 @@ class SNFProcessor:
                 self.interpolate(self.year, lo, hi, self.decay_bounds, self.method),
                 self.round_num,
             )
-            conc_assy = round(Converter_MTU2ASSY(conc, self.df_STDH_filtered), self.round_num)
+            conc_assy = round(Converter_MTU2ASSY(conc, self.df_DHST_filtered), self.round_num)
             rows.append((str(nuclide), conc, conc_assy))
 
         df = pd.DataFrame(rows, columns=["nuclide", "gram/MTU", "gram/assy."])
@@ -202,7 +202,7 @@ class SNFProcessor:
                 self.interpolate(self.year, lo, hi, self.decay_bounds, self.method),
                 self.round_num,
             )
-            act_assy = round(Converter_MTU2ASSY(act, self.df_STDH_filtered), self.round_num)
+            act_assy = round(Converter_MTU2ASSY(act, self.df_DHST_filtered), self.round_num)
             rows.append((str(nuclide), act, act_assy))
 
         df = pd.DataFrame(rows, columns=["nuclide", "Ci/MTU", "Ci/assy."])
@@ -221,21 +221,21 @@ class SNFProcessor:
     # ────────────────────────────────────────────────────────────────────────
     @staticmethod
     def write_excel(
-        df_stdh: pd.DataFrame,
+        df_dhst: pd.DataFrame,
         df_act: pd.DataFrame,
         df_conc: pd.DataFrame,
         output_dir: Union[str, Path],
         file_name: str,
     ) -> None:
         """
-        Write three sheets (STDH / Concentration / Activity) to a single workbook.
+        Write three sheets (DHST / Concentration / Activity) to a single workbook.
         Overwrites the file if it exists (same as original).
         """
         path = Path(output_dir, f"{file_name}.xlsx")
         if path.exists():
             path.unlink()
         with pd.ExcelWriter(path) as writer:
-            df_stdh.to_excel(writer, sheet_name="STDH", index=False)
+            df_dhst.to_excel(writer, sheet_name="DHST", index=False)
             df_conc.to_excel(writer, sheet_name="Concentration", index=False)
             df_act.to_excel(writer, sheet_name="Activity", index=False)
 
@@ -246,7 +246,7 @@ class SNFProcessor:
             self.SNF_id,
             "Weight",
             "Weight (g/assy.)",
-            self.df_STDH_filtered,
+            self.df_DHST_filtered,
             output_dir,
         )
         plot_Gram_Ci(
@@ -254,14 +254,14 @@ class SNFProcessor:
             self.SNF_id,
             "Activity",
             "Activity (Ci/assy.)",
-            self.df_STDH_filtered,
+            self.df_DHST_filtered,
             output_dir,
         )
 
     def run(self) -> None:
         """
         Convenience runner used elsewhere in the app:
-          - compute STDH, concentration, and activity
+          - compute DHST, concentration, and activity
           - create an output directory
           - write Excel
           - print a short timing message
@@ -270,7 +270,7 @@ class SNFProcessor:
         """
         start = time.time()
 
-        st = self.compute_stdh()
+        st = self.compute_dhst()
         conc = self.compute_concentration()
         act = self.compute_activity()
 
@@ -286,7 +286,7 @@ class SNFProcessor:
             self.SNF_id,
             "Weight",
             "Concentration(g)",
-            self.df_STDH_filtered,
+            self.df_DHST_filtered,
             output_dir,
         )
         plot_Gram_Ci(
@@ -294,7 +294,7 @@ class SNFProcessor:
             self.SNF_id,
             "Activity",
             "Activity(Ci)",
-            self.df_STDH_filtered,
+            self.df_DHST_filtered,
             output_dir,
         )
 
