@@ -17,7 +17,7 @@ class SingleSearchFrame(tk.Frame):
     A scrollable frame for searching SNF data by name and year.
     Features:
     - Loads and filters a provided DataFrame of SNF metadata.
-    - Computes STDH, mass (gram), and activity (Ci) for a given SNF/year.
+    - Computes DHST, mass (gram), and activity (Ci) for a given SNF/year.
     - Displays details in a grid plus three tabular viewers.
     - Generates plots and (optionally) keeps or removes the output folder.
     """
@@ -79,7 +79,7 @@ class SingleSearchFrame(tk.Frame):
             side=tk.LEFT, padx=(5, 0)
         )  # Save output checkbox
 
-        # --- Details Viewer (above STDH_viewer) ---
+        # --- Details Viewer (above DHST_viewer) ---
         _, self.details_canvas, self.details_frame = build_scrollbar_canvas(
             self.inner, label="SNF Details"
         )
@@ -87,8 +87,8 @@ class SingleSearchFrame(tk.Frame):
         # Default empty values (ordering/keys provided by external helper)
         self.default_fields = set_SNFdetail_info(option=1)
 
-        # --- STDH Viewer: full width, fixed 150px height ---
-        self.STDH_viewer = self._make_viewer(
+        # --- DHST Viewer: full width, fixed 150px height ---
+        self.DHST_viewer = self._make_viewer(
             parent=self.inner,
             height=150,
             columns=[
@@ -166,7 +166,7 @@ class SingleSearchFrame(tk.Frame):
     # ──────────────────────────────────────────────────────────────────────────
     def _clear_viewers(self) -> None:
         """Remove all rows from each DataFrameViewer's underlying treeview."""
-        for v in (self.STDH_viewer, self.Gram_viewer, self.Ci_viewer):
+        for v in (self.DHST_viewer, self.Gram_viewer, self.Ci_viewer):
             for iid in v.tree.get_children():
                 v.tree.delete(iid)
 
@@ -244,7 +244,7 @@ class SingleSearchFrame(tk.Frame):
     # ──────────────────────────────────────────────────────────────────────────
     def search_single(self) -> None:
         """
-        Validate inputs, compute STDH/grams/Ci via SNFProcessor, update viewers
+        Validate inputs, compute DHST/grams/Ci via SNFProcessor, update viewers
         and details, render plots, and optionally delete the output folder if
         'Save output' is unchecked.
         """
@@ -290,20 +290,20 @@ class SingleSearchFrame(tk.Frame):
 
         # --- Computation with SNFProcessor ---
         proc = SNFProcessor(series_name=name, target_year=y)
-        df_stdh = proc.compute_stdh()
+        df_dhst = proc.compute_dhst()
         df_gram = proc.compute_concentration()
         df_ci = proc.compute_activity()
 
         # --- Update viewers with new data ---
         self._clear_viewers()
-        self._insert_rows(self.STDH_viewer, df_stdh)
+        self._insert_rows(self.DHST_viewer, df_dhst)
         self._insert_rows(self.Gram_viewer, df_gram)
         self._insert_rows(self.Ci_viewer, df_ci)
 
         # --- Generate plots and write Excel ---
         output_dir = create_output_dir(parent_folder_name="Results_Single_SNF")
         proc.plot_single_SNF(output_dir)
-        proc.write_excel(df_stdh, df_ci, df_gram, output_dir, name)
+        proc.write_excel(df_dhst, df_ci, df_gram, output_dir, name)
 
         # --- Load and display plots ---
         weight_img_path = os.path.join(output_dir, f"{name}_Weight.png")
