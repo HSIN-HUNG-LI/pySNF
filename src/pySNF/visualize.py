@@ -203,14 +203,14 @@ def compute_relative_errors(df: pd.DataFrame, ERROR_METRICS: list) -> pd.DataFra
     return df
 
 
-def plot_stdh_RelativeError_boxplots(
+def plot_dhst_RelativeError_boxplots(
     df: pd.DataFrame,
     ERROR_METRICS: list,
     title_boxplot: str,
     save_path: Optional[Path] = None,
 ) -> pd.DataFrame:
     """
-    Create a single figure with four boxplots—one for each ST&DH metric—
+    Create a single figure with four boxplots—one for each DH&ST metric—
     combining all samples (no grouping by Type).
 
     - X-axis labels: ["DH", "FN", "HG", "FG"]
@@ -221,8 +221,8 @@ def plot_stdh_RelativeError_boxplots(
     df_error_matrix = compute_relative_errors(df, ERROR_METRICS)
 
     # Columns to plot (expected to exist in df_error_matrix)
-    stdh_metrics = ["DH", "FN", "FG", "HG"]
-    error_cols = [f"error_{m}" for m in stdh_metrics]
+    dhst_metrics = ["DH", "FN", "FG", "HG"]
+    error_cols = [f"error_{m}" for m in dhst_metrics]
 
     # Validate presence of required columns early with a clear error
     missing = [c for c in error_cols if c not in df_error_matrix.columns]
@@ -236,7 +236,7 @@ def plot_stdh_RelativeError_boxplots(
     df_long["Metric"] = df_long["Metric"].str.replace("error_", "", regex=False)
 
     # Enforce a consistent, desired ordering on the x-axis
-    cat_order = pd.CategoricalDtype(categories=stdh_metrics, ordered=True)
+    cat_order = pd.CategoricalDtype(categories=dhst_metrics, ordered=True)
     df_long["Metric"] = df_long["Metric"].astype(cat_order)
 
     # --- Plot ---
