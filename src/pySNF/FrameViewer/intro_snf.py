@@ -36,7 +36,7 @@ burnup (Bp), cooling time (Ct), enrichment (En), specific power (Sp), etc.
 
 Please ensure the following directories and files are correctly set up:
 pySNF/data/DataBase_SNFs/:
-→ all_stdh_dataset.csv: fuel ID and important information for all spent nuclear fuels in this dataset
+→ DataBase_All_DHST.csv: fuel ID and important information for all spent nuclear fuels in this dataset
 → Individual SNF files: nuclide composition (weight and activity) of each fuel as a function of colling time 
 pySNF/data/DataBase_Grid/:
 → grid_database.parq: a pre-processed grid database in Parquet format used for predicting SNF characteristics
