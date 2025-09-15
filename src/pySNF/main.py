@@ -2,10 +2,10 @@ import tkinter as tk
 from FrameViewer.intro_snf import IntroFrame
 from FrameViewer.single_snf import SingleSearchFrame
 from FrameViewer.compare_snfs import CompareSNFsFrame
-from FrameViewer.mutiple_snfs import MultipleSearchFrame
+from FrameViewer.multiple_snfs import MultipleSearchFrame
 from FrameViewer.all_snfs import AllSNFsFrame
 from FrameViewer.prediction import PredictionFrame
-from io_file import load_dataset, get_stdh_path
+from io_file import load_dataset, get_dhst_path
 
 class SearchApp(tk.Tk):
     """Main window for pySNF: SNF Dataset Explorer App."""
@@ -17,7 +17,7 @@ class SearchApp(tk.Tk):
         self.geometry("1200x600")
 
         # Load dataset once to avoid repeated I/O (MessageBox in io file)
-        self.df_path = get_stdh_path()
+        self.df_path = get_dhst_path()
         self.df = load_dataset(self.df_path)
 
         # Define available modes
