@@ -15,7 +15,7 @@ from io_file import create_output_dir, set_SNFdetail_info, get_SNFdetail_TableUn
 class CompareSNFsFrame(tk.Frame):
     """
     A scrollable frame for comparing two SNFs by ID and year.
-    - Shows side-by-side details and tabular STDH/Weight/Activity results.
+    - Shows side-by-side details and tabular DHST/Weight/Activity results.
     - Renders two pairs of plots (Weight and Activity) for visual comparison.
     - Optionally saves outputs; otherwise the temporary folder is removed.
     """
@@ -79,14 +79,14 @@ class CompareSNFsFrame(tk.Frame):
         tk.Button(row2, text="Output", command=self.compare_snfs).pack(side=tk.LEFT)
         tk.Checkbutton(row2, text="Save output", variable=self.save_var).pack(side=tk.LEFT, padx=(5, 0))
 
-        # --- Details Viewer (above STDH_viewer) ---
+        # --- Details Viewer (above DHST_viewer) ---
         _, self.details_canvas, self.details_frame = build_scrollbar_canvas(self.inner, label="SNF Details")
 
         # Default detail field ordering/keys
         self.default_fields = set_SNFdetail_info(option=1)
 
-        # --- STDH Viewer: full width, fixed 150px height ---
-        self.STDH_viewer = self._make_viewer(
+        # --- DHST Viewer: full width, fixed 150px height ---
+        self.DHST_viewer = self._make_viewer(
             parent=self.inner,
             height=150,
             columns=[
@@ -187,7 +187,7 @@ class CompareSNFsFrame(tk.Frame):
     # ────────────────────────────────────────────────────────────────────────
     def _clear_viewers(self) -> None:
         """Clear all rows in each viewer's treeview."""
-        for v in (self.STDH_viewer, self.Gram_viewer, self.Ci_viewer, self.Gram_viewer2, self.Ci_viewer2):
+        for v in (self.DHST_viewer, self.Gram_viewer, self.Ci_viewer, self.Gram_viewer2, self.Ci_viewer2):
             for iid in v.tree.get_children():
                 v.tree.delete(iid)
 
@@ -304,7 +304,7 @@ class CompareSNFsFrame(tk.Frame):
     # ────────────────────────────────────────────────────────────────────────
     def compare_snfs(self) -> None:
         """
-        Validate inputs; compute and render STDH/grams/Ci/plots for two SNFs.
+        Validate inputs; compute and render DHST/grams/Ci/plots for two SNFs.
         If 'Save output' is not checked, delete the generated folder.
         """
         # --- Input validation ---
@@ -354,26 +354,26 @@ class CompareSNFsFrame(tk.Frame):
 
         # --- Computation with SNFProcessor ---
         proc = SNFProcessor(series_name=name, target_year=yr)
-        df_stdh = proc.compute_stdh()
+        df_dhst = proc.compute_dhst()
         df_gram = proc.compute_concentration()
         df_ci = proc.compute_activity()
 
         proc2 = SNFProcessor(series_name=name2, target_year=yr2)
-        df_stdh2 = proc2.compute_stdh()
+        df_dhst2 = proc2.compute_dhst()
         df_gram2 = proc2.compute_concentration()
         df_ci2 = proc2.compute_activity()
 
         # --- Update viewers with new data ---
         self._clear_viewers()
 
-        # Add a "Name" column to each STDH table for identification
-        df_stdh.insert(0, "SNF_id", f"{name}_{yr}")
-        df_stdh2.insert(0, "SNF_id", f"{name2}_{yr2}")
+        # Add a "Name" column to each DHST table for identification
+        df_dhst.insert(0, "SNF_id", f"{name}_{yr}")
+        df_dhst2.insert(0, "SNF_id", f"{name2}_{yr2}")
 
-        # Merge the two STDH DataFrames for a single table view
-        df_stdh_merged = pd.concat([df_stdh, df_stdh2], ignore_index=True)
-        for row in df_stdh_merged.itertuples(index=False, name=None):
-            self.STDH_viewer.tree.insert("", "end", values=row)
+        # Merge the two DHST DataFrames for a single table view
+        df_dhst_merged = pd.concat([df_dhst, df_dhst2], ignore_index=True)
+        for row in df_dhst_merged.itertuples(index=False, name=None):
+            self.DHST_viewer.tree.insert("", "end", values=row)
 
         # Update panel titles to reflect IDs and years
         self.Gram_viewer.label.config(text=f"{name}_{yr} Weight (gram)")
@@ -392,13 +392,13 @@ class CompareSNFsFrame(tk.Frame):
 
         # First SNF
         proc.plot_single_SNF(output_dir)
-        proc.write_excel(df_stdh, df_ci, df_gram, output_dir, name)
+        proc.write_excel(df_dhst, df_ci, df_gram, output_dir, name)
         weight_img_path = os.path.join(output_dir, f"{name}_Weight.png")
         ci_img_path = os.path.join(output_dir, f"{name}_Activity.png")
 
         # Second SNF
         proc2.plot_single_SNF(output_dir)
-        proc2.write_excel(df_stdh2, df_ci2, df_gram2, output_dir, name2)
+        proc2.write_excel(df_dhst2, df_ci2, df_gram2, output_dir, name2)
         weight_img_path2 = os.path.join(output_dir, f"{name2}_Weight.png")
         ci_img_path2 = os.path.join(output_dir, f"{name2}_Activity.png")
 
