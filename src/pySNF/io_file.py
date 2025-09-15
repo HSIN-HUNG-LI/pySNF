@@ -12,9 +12,9 @@ from tkinter import messagebox
 # logger = logging.getLogger(__name__)
 
 
-def get_stdh_path() -> Path:
+def get_dhst_path() -> Path:
     """
-    Return the absolute path to the aggregated STDH dataset CSV.
+    Return the absolute path to the aggregated DHST dataset CSV.
 
     The path is resolved relative to the repository root:
     <root>/data/DataBase_SNFs/DataBase_All_DHST.csv
@@ -145,21 +145,21 @@ def create_output_dir(parent_folder_name: Union[str, Path]) -> Path:
 
 
 def write_excel(
-    df_stdh: pd.DataFrame,
+    df_dhst: pd.DataFrame,
     df_act: pd.DataFrame,
     df_conc: pd.DataFrame,
     output_dir: Union[str, Path],
     file_name: str,
 ) -> None:
     """
-    Write STDH, Concentration, and Activity sheets to a single Excel workbook,
+    Write DHST, Concentration, and Activity sheets to a single Excel workbook,
     overwriting any existing file with the same name.
     """
     path = Path(output_dir) / f"{file_name}.xlsx"
     if path.exists():
         path.unlink()
     with pd.ExcelWriter(path) as writer:
-        df_stdh.to_excel(writer, sheet_name="STDH", index=False)
+        df_dhst.to_excel(writer, sheet_name="DHST", index=False)
         df_conc.to_excel(writer, sheet_name="Concentration", index=False)
         df_act.to_excel(writer, sheet_name="Activity", index=False)
 
